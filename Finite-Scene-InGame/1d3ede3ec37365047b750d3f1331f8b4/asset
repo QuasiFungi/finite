@@ -1,0 +1,18 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class menu_panel : MonoBehaviour
+{
+    public RectTransform _panel;
+    public GameObject _continue;
+
+    void Start()
+    {
+        _continue.SetActive(game_master.Instance.HasSaveFile);
+        if (_continue.activeSelf)
+            _panel.sizeDelta = new Vector2(_panel.sizeDelta.x, 250);
+        else
+            _panel.sizeDelta = new Vector2(_panel.sizeDelta.x, 175);
+    }
+}

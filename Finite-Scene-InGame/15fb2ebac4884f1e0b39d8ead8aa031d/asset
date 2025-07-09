@@ -1,0 +1,99 @@
+using System.Collections.Generic;
+using UnityEngine;
+using Panda;
+
+public class entity_hunter : entity_ai
+{
+    // public Transfrom traps; // empty for all traps
+    // public List<Transform> _traps; // (?loaded) trap transforms ? [private]
+
+    protected override List<Waypoint> Filter_Waypoints()
+    {
+        List<Waypoint> waypoints = new List<Waypoint>();
+        // Vector3 source = _target == null ? _positionAudio : _target.position;
+        Vector3 source;
+        if (IsBored)
+            source = transform.position;
+        else if (_target == null)
+            source = _positionAudio;
+        else
+            source = _target.position;
+        foreach (Waypoint waypoint in base.Filter_Waypoints())
+        {
+            // filter for is bored...
+            if (IsBored && waypoint.flag == 1)
+            {
+                waypoints.Add(waypoint);
+                // Debug.Log("Bored");
+            }
+            // filter for not bored... [audio|vision event always]
+            else if (!IsBored && waypoint.flag == 0)
+            {
+                // Debug.Log("Not Bored!?");
+                float distance = Vector3.Distance(waypoint.Position, source);
+                // in radial band [break on no nearby ? default to anchor ? also null ?] [H A R D coded ?]
+                if (distance > 15f && distance < game_variables.Instance.CameraFar)
+                // in radius
+                // if (distance < game_variables.Instance.CameraFar)
+                {
+                    // clear check [waypoint > source]
+                    // RaycastHit hitInfo;
+                    // if (Physics.Raycast(waypoint.Position, source - waypoint.Position, out hitInfo, distance))
+                    //     if (hitInfo.transform.gameObject.layer == game_variables.Instance.LayerPlayer)
+                    waypoints.Add(waypoint);
+                }
+            }
+        }
+        // Debug.Log("filter\t" + waypoints.Count);
+        return waypoints;
+    }
+
+    [Task]
+    public void IsTrap()
+    {
+        Task.current.Fail();
+    }
+
+    // [Task]
+    // public void MoveAtTrapUnset()
+    // {
+    //     Task.current.Fail();
+    // }
+
+    // [Task]
+    // public void SetMoveToTrapUnset()
+    // {
+    //     Task.current.Fail();
+    // }
+
+    [Task]
+    // public void EntityAtWaypoint(float distance)
+    public void EntityAtWaypoint()
+    {
+        if (IsWaypoint(transform.position))
+            Task.current.Succeed();
+        else
+            Task.current.Fail();
+    }
+
+    [Task]
+    public void TargetAtAnchor(float distance)
+    {
+        // safety ?
+        if (_target == null || _anchor == null)
+            Task.current.Fail();
+        else if (Vector3.Distance(_target.position, _anchor.position) < distance)
+            Task.current.Succeed();
+        else
+            Task.current.Fail();
+    }
+
+    [Task]
+    public void OffsetMoveToTargetDirection()
+    {
+        // 
+        _move.position = GetWaypointDirection();
+        // always ?
+        Task.current.Succeed();
+    }
+}

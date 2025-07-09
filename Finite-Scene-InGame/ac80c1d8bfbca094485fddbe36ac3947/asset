@@ -1,0 +1,303 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class base_item : MonoBehaviour
+{
+    public bool _debug;
+    // private/protected ?
+    public enum ItemType
+    {
+        PICKUP,
+        VIEW,
+        INTERACTIVE,
+        DIALOGUE,
+        MODEL
+    }
+    public ItemType _itemType;
+    protected string _slug; //internal reference to object's name
+
+    private Color _colorHighlight;
+    private float _fadeTime;
+
+    private Color _colorTarget;
+    private Color _colorCurrent;
+    private Renderer[] _renderers;
+    private List<Material> _materials = new List<Material>();
+
+    private int _isInteractive;    //set to false every cycle [true through function call] [0: OFF, 1: TRUE, -1: FALSE] [valid at least one cycle] 
+
+    // Testing [(?General) Item Variables] 
+    // private base_interactive _interactive;  // to trigger item custom interaction events [animation, etc] [private since can't serialize] 
+    [Tooltip("Item sprite for itembag (?and diary) slot")] public Sprite _spriteSlot;              // item sprite for itembag (?and diary) slot 
+    [Tooltip("Item sprite for world interaction")] public Sprite _spriteInteraction;       // item sprite for world interaction 
+    [Tooltip("View mode model reference")] public GameObject _viewModel;           // view mode model reference 
+    [Tooltip("Equip mode model reference")] public GameObject _equipModel;          // equip mode model reference 
+    [Tooltip("Messages to display ?")] public string[] _displayMessages;       // messages to display ? 
+    // public string[] _entriesDiary;          // diary entry versions for item ? based on discovered items ? 
+    private int _counterDisplayMessage;     // to update display messages ? 
+    // private int _counterEntryDiary;         // to update diary entries ? 
+    // ??? item(s) it can combine with ? 
+    private bool _isHighlight;              // toggle outline
+
+    private bool _isFavourite;              // ? item bag slot specific data
+
+    void Start()
+    {
+        Initialize();
+    }
+
+    public virtual void Initialize()
+    {
+        // load type, slug
+        string[] id = gameObject.name.Split('-');
+        // safety ?
+        if (id.Length != 2)
+        {
+            Debug.LogWarning(gameObject.name + ": Invalid item name! Make sure it matches the schema itemName-type");
+            // abort ?
+            return;
+        }
+        _slug = id[0];
+        _itemType = (ItemType)System.Enum.Parse(typeof(ItemType), id[1].ToUpper());
+        _isHighlight = true;
+        switch (_itemType)
+        {
+            case ItemType.PICKUP:
+                _colorHighlight = game_variables.Instance.ColorItemPickup;
+                break;
+            case ItemType.VIEW:
+                _colorHighlight = game_variables.Instance.ColorItemView;
+                break;
+            case ItemType.INTERACTIVE:
+                _colorHighlight = game_variables.Instance.ColorItemInteractive;
+                break;
+            case ItemType.DIALOGUE:
+                _colorHighlight = game_variables.Instance.ColorItemDialogue;
+                break;
+            case ItemType.MODEL:
+                // _colorHighlight = game_variables.Instance.ColorItemModel;
+                _isHighlight = false;
+                break;
+        }
+        // type model
+        if (!_isHighlight)
+            return;
+        // others
+        _fadeTime = 5;
+        _colorTarget = Color.black;
+        _colorCurrent = Color.black;
+        _isInteractive = -1;
+        _counterDisplayMessage = 0;
+        // _counterEntryDiary = 0;
+
+        // Load all materials 
+        _renderers = GetComponentsInChildren<Renderer>();
+        foreach (var renderer in _renderers)
+            _materials.AddRange(renderer.materials);
+        // Register self with interaction system 
+        system_interaction.Instance.RegisterTarget(transform);
+        _isFavourite = false;
+
+        // // debug dump
+        // if (_debug)
+        //     testLog.Instance.AddMessage(_slug + "\t" + DebugMessage(),5);
+    }
+
+    private void Update()
+    {
+        // type non model
+        if (_isHighlight)
+        {
+            // Set color based on flag 
+            if (_isInteractive > -1)
+                _colorTarget = _colorHighlight;
+            else
+                _colorTarget = Color.black;
+            // Calculate hightlight color to apply 
+            if (!_colorCurrent.Equals(_colorTarget))
+                _colorCurrent = Color.Lerp(_colorCurrent, _colorTarget, Time.deltaTime * _fadeTime);
+            // Set outline material color 
+            for (int i = 0; i < _materials.Count; i++)
+                _materials[i].SetColor("_GlowColor", _colorCurrent);
+            // Clear flag 
+            if (_isInteractive > -1)
+                _isInteractive--;
+        }
+
+        // extra behaviour ?
+        Trigger_Passive();
+        // debug dump
+        if (_debug)
+            testLog.Instance.AddMessage(_slug + "\t" + DebugMessage());
+    }
+
+    // custom overrides [unset variables]
+    public virtual string DebugMessage()
+    {
+        return "henlo";
+    }
+
+    public virtual void Trigger_Passive()
+    {
+        // 
+    }
+
+    // Called every cycle while item as target 
+    public void Highlight()
+    {
+        // Set flag 
+        _isInteractive = 2;
+    }
+
+    // Called by player_controller on interact event [and by item bag on item select?] 
+    public void Trigger_Interact()
+    {
+        print("Player interacted with: " + _slug);
+        switch (_itemType)
+        {
+            case ItemType.PICKUP:
+                // trigger item event [view] 
+                manager_ui.Instance.Trigger_ItemView();
+                item_view.Instance.ClearModels();
+                if (_viewModel != null)
+                    _viewModel.SetActive(true);
+                // hide item object ?
+                // gameObject.SetActive(false);
+                Poof();
+                // add item to inventory 
+                base_player.Instance.Trigger_ItemAdd(this);
+                // trigger dialogue menu ? [engravedRing, lantern]
+                Trigger_Dialogue();
+                break;
+            case ItemType.VIEW:
+                // trigger item event [view] 
+                manager_ui.Instance.Trigger_ItemView();
+                item_view.Instance.ClearModels();
+                if (_viewModel != null)
+                    _viewModel.SetActive(true);
+                break;
+            case ItemType.INTERACTIVE:
+                // trigger item event logic [preset/custom]
+                Trigger_Interaction();
+                break;
+            case ItemType.DIALOGUE:
+                // trigger item event logic [preset/custom]
+                Trigger_Dialogue();
+                break;
+            case ItemType.MODEL:
+                // trigger item event logic [preset/custom]
+                Trigger_Model();
+                break;
+        }
+    }
+
+    // default interaction
+    public virtual void Trigger_Interaction()
+    {
+        // trigger dialogue menu 
+        manager_ui.Instance.Trigger_DisplayMessage();
+        // if possible
+        if (_displayMessages.Length > 0)
+            display_message.Instance.SetMessage(_displayMessages[_counterDisplayMessage]);
+        else
+            display_message.Instance.SetMessage("cyka");
+    }
+
+    // default dialogue
+    public virtual void Trigger_Dialogue()
+    {
+        // got somethin' to say
+        if (_displayMessages.Length > 0)
+        {
+            // trigger dialogue menu
+            manager_ui.Instance.Trigger_DisplayMessage();
+            display_message.Instance.SetMessage(_displayMessages[_counterDisplayMessage]);
+        }
+    }
+
+    // default model
+    public virtual void Trigger_Model()
+    {
+        // ???
+        // material sound ?
+    }
+
+    // Called by item bag on item select ? 
+    public void Trigger_Equip()
+    {
+        base_player.Instance.Trigger_ItemEquip(this);
+    }
+
+    // ???
+    public void SetCounter_DisplayMessage(int counter)
+    {
+        if (counter > -1 && counter < _displayMessages.Length)
+            _counterDisplayMessage = counter;
+    }
+
+    protected void Poof()
+    {
+        transform.GetComponent<MeshRenderer>().enabled = false;
+        transform.GetComponent<BoxCollider>().enabled = false;
+    }
+
+    // 
+    public void ToggleFavourite()
+    {
+        // Debug.Log("fav");
+        _isFavourite = !_isFavourite;
+    }
+
+    // lexicon ?
+    // public void Trigger_DisplayMessage(int index)
+    // {
+    //     // 
+    // }
+
+    // // ???
+    // public void SetCounter_DiaryEntry(int counter)
+    // {
+    //     if (counter > -1 && counter < _entriesDiary.Length)
+    //         _counterEntryDiary = counter;
+    //     // update base player diary rng ? 
+    // }
+
+    #region Properties
+
+    // public string Slug
+    // {
+    //     get { return _slug; }
+    // }
+
+    // public ItemType ItemType
+    // {
+    //     get { return _itemType; }
+    // }
+
+    // used by itembag slot to display item sprite 
+    public Sprite SpriteSlot
+    {
+        get { return _spriteSlot; }
+    }
+
+    // used by system interaction to display item sprite 
+    public Sprite SpriteInteraction
+    {
+        get { return _spriteInteraction; }
+    }
+
+    // 
+    public bool IsFavourite
+    {
+        get { return _isFavourite; }
+    }
+
+    public string Slug
+    {
+        get { return _slug; }
+    }
+
+    #endregion
+}

@@ -1,0 +1,27 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.EventSystems;
+
+public class input_uiMain : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
+{
+    public manager_uiMain _managerUIMain;
+
+    private Vector2 _bufferPressPosition;       //last pressed pointer position 
+    
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        // store press position in buffer 
+        _bufferPressPosition = eventData.position;
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        // check for tap 
+        if (eventData.position == _bufferPressPosition)
+        {
+            _managerUIMain.Trigger_Close();
+            _bufferPressPosition = Vector2.zero;
+        }
+    }
+}

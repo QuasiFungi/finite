@@ -1,0 +1,179 @@
+using UnityEngine;
+using Panda;
+
+public class entity_watcher : entity_ai
+{
+    public GameObject[] tentacles;
+    public int _spawnCount;
+    private int _spawnCounter;
+    // private NavMeshPath _path;
+    public float _speedRotate;
+
+    protected override void Initialize()
+    {
+        base.Initialize();
+        // 
+        _spawnCounter = 0;
+        // _path = new NavMeshPath();
+    }
+
+    [Task]
+    public void UnsetCounter()
+    {
+        _spawnCounter = 0;
+        // 
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void SetLookToVision()
+    {
+        if (_positionVision == Vector3.zero)
+            Task.current.Fail();
+        else
+        {
+            // geee~
+            transform.LookAt(Vector3.Lerp(transform.position + transform.forward, _positionVision, _speedRotate * Time.deltaTime));
+            // checked
+            if (Vector3.Angle(transform.forward, _positionVision - transform.position) <= _speedRotate)
+                _positionVision = Vector3.zero;
+            // 
+            Task.current.Succeed();
+        }
+    }
+
+    [Task]
+    public void SetLookToAudio()
+    {
+        if (_positionAudio == Vector3.zero)
+            Task.current.Fail();
+        else
+        {
+            // geee~
+            transform.LookAt(Vector3.Lerp(transform.position + transform.forward, _positionAudio, _speedRotate * Time.deltaTime));
+            // checked
+            if (Vector3.Angle(transform.forward, _positionAudio - transform.position) <= _speedRotate)
+                _positionAudio = Vector3.zero;
+            // 
+            Task.current.Succeed();
+        }
+    }
+
+    // [Task]
+    // public void SetMoveToOmniBack(float distance)
+    // {
+    //     // random or fixed point on radial locus ?
+    //     RaycastHit hitInfo;
+    //     if (Physics.Raycast(_target.position, -_target.forward, out hitInfo, distance))
+    //         // obstructed ?
+    //         // _positionMove = hitInfo.point;
+    //         _move.position = hitInfo.point;
+    //     else
+    //         // clear ?
+    //         // _positionMove = _target.position + _target.forward * distance;
+    //         _move.position = _target.position - _target.forward * distance;
+    //     // always
+    //     Task.current.Succeed();
+    // }
+
+    [Task]
+    public void OffsetMoveToRadialBand(float radiusMin, float radiusMax, float angleMinY, float angleMaxY)
+    {
+        // get position nearby ???
+        Vector3 position;
+        if (_targets != null && _targets.Count > 0)
+        {
+            // polar coordinates to cartesian ?
+            // - polar
+            // random angle
+            float angleX = Random.Range(-45, 0);
+            float angleY = Random.Range(angleMinY, angleMaxY);
+            // random radius in range
+            float radius = Random.Range(radiusMin, radiusMax);
+            // - cartesian
+            // _move.position += Vector3.right * radius * Mathf.Cos(angle) + Vector3.forward * radius * Mathf.Sin(angle);
+            // _move.position += _target.right * radius * Mathf.Cos(angle) + _target.forward * radius * Mathf.Sin(angle);
+            // _move.position += _target.forward * radius;
+            // _move.position += transform.right * Random.Range(-radius, radius) + transform.forward * Random.Range(-radius, radius);
+            position = _move.position + Quaternion.Euler(angleX, angleY, 0) * _target.forward * radius;
+            // // get valid position [if not already ?]
+            // UnityEngine.AI.NavMesh.CalculatePath(position, _targets[0].position, UnityEngine.AI.NavMesh.AllAreas, _path);
+            // // ???
+            // for (int i = 0; i < _path.corners.Length - 1; i++)
+            //     Debug.DrawLine(_path.corners[i], _path.corners[i + 1], Color.red);
+            // // 
+            // if (_path.corners.Length > 0)
+            // {
+            //     _move.position = _path.corners[0];
+            //     // always ?
+            //     Task.current.Succeed();
+            //     return;
+            // }
+            // else
+            //     // hold|override position ? try again next frame ? limit ?
+            // 
+            Debug.DrawLine(_move.position, position, Color.green);
+            //     _move.position = transform.position;
+            Vector3 direction = position - _target.position;
+            RaycastHit hitInfo;
+            if (Physics.Raycast(_target.position, direction, out hitInfo, direction.magnitude))
+            // {
+                // position changed ?
+                _move.position = hitInfo.point;
+                // Task.current.Succeed();
+                // return;
+            // }
+            else
+                _move.position = position;
+        }
+        // always ?
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void SpawnTentacle(float radius)
+    {
+        // Debug.Log(_spawnCount + "\t" + _radiusCurse / radiusCurse + "\t" + (float)_spawnCount / hounds.Length);
+        if (_spawnCounter < _spawnCount)
+        {
+            // get position nearby ???
+            Vector3 position;
+            // tries ?
+            int count = 3;
+            while (count > 0)
+            {
+                // polar coordinates to cartesian ?
+                // - polar
+                // random direction ?
+                float angleX = Random.Range(0, 360);
+                float angleY = Random.Range(0, 360);
+                // - cartesian
+                position = transform.position + Quaternion.Euler(angleX, angleY, 0) * transform.forward * radius;
+                // 
+                Debug.DrawLine(transform.position, position, Color.green);
+                // check position
+                Vector3 direction = position - transform.position;
+                RaycastHit hitInfo;
+                if (Physics.Raycast(transform.position, direction, out hitInfo, direction.magnitude, game_variables.Instance.LayerEnvironmentScan))
+                {
+                    // tentacles[_spawnCount - 1].transform.position = hitInfo.point;
+                    // tentacles[_spawnCount - 1].transform.LookAt(hitInfo.point + hitInfo.normal);
+                    // // enable preexisting object ???
+                    // tentacles[_spawnCount - 1].SetActive(true);
+                    Instantiate(tentacles[Random.Range(0, tentacles.Length)], hitInfo.point, Quaternion.LookRotation(hitInfo.normal, Vector3.up)).SetActive(true);
+                    _spawnCounter++;
+                    // 
+                    Task.current.Succeed();
+                    return;
+                }
+                // 
+                count--;
+            }
+            // else
+            //     tentacles[_spawnCount - 1].transform.position = transform.position + transform.forward * distance;
+            // Debug.Log(hounds[_spawnCount - 1].transform.position);
+        }
+        // try again ?
+        Task.current.Fail();
+    }
+}

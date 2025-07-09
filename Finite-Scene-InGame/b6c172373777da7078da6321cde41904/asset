@@ -1,0 +1,81 @@
+using UnityEngine;
+
+public class itemModel_book : base_item
+{
+    private Animator _anim;
+    // public Animator _animModel;
+    // private bool _isOpen;
+    private float _page;    // current [-1 closed|0+ open] private ?
+    public float _pages;   // total
+    public override void Initialize()
+    {
+        // 
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        // _animModel = _viewModel.transform.GetComponent<Animator>();
+        // 
+        // _isOpen = false;
+        _page = -1f;
+    }
+    // page
+    public void PageCycle(float direction)
+    {
+        // Debug.Log("cycle\t" + direction);
+        // - tick
+        // pad[id] = true;
+        _page += direction;
+        // overflow [last page]
+        if (_page > _pages)
+            // Debug.Log("max\t" + gameObject.name);
+            _page = _pages;
+            // _page = 0;
+        // underflow [first page]
+        else if (_page < 0)
+            // Debug.Log("min\t" + gameObject.name);
+            // close ?
+            // _page = -1;
+            _page = 0;
+            // _page = _pages;
+        // - animate
+        // empty book case ?
+        _anim.SetFloat("Page", _page / (_pages == 0 ? 1 : _pages));
+        // blend tree ?
+        // _anim.SetInteger("Page", _page / _pages);
+        // _animModel.SetInteger("Page", _page);
+    }
+    // cover, bookmark
+    public void PageSet(float page)
+    {
+        // Debug.Log("set\t" + page);
+        // valid
+        if (page >= 0 && page <= _pages)
+        {
+            // Debug.Log("open\t" + gameObject.name);
+            _page = page;
+            // empty book case ?
+            _anim.SetFloat("Page", _page / (_pages == 0 ? 1 : _pages));
+        }
+        // close ?
+        else
+        {
+            // Debug.Log("close\t" + gameObject.name);
+            _page = -1;
+            _anim.SetFloat("Page", _page);
+        }
+        // - animate
+        // blend tree ?
+        // _anim.SetInteger("Page", _page);
+        // _animModel.SetInteger("Page", _page);
+    }
+    // ??? trigger item view from diagram
+    // diary sketch ? personal diary only ? conditional ?
+    public void PageItemView(float page)
+    {
+        // wut do ?
+    }
+    // ???
+    public bool IsOpen
+    {
+        get { return _page > -1; }
+    }
+}

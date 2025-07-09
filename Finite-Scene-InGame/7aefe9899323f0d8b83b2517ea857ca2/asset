@@ -1,0 +1,38 @@
+using UnityEngine;
+
+public class entity_corpse : MonoBehaviour
+{
+    public float radius;
+    public float time;
+    private float _timer;
+    void Awake()
+    {
+        _timer = 0;
+    }
+    void Update()
+    {
+        // not already releasing
+        if (_timer > 0)
+        {
+            _timer -= Time.deltaTime;
+            // released
+            if (_timer <= 0)
+                Destroy(gameObject);
+        }
+        // player nearby
+        else if (Vector3.Distance(player_motor.Instance.Position, transform.position) < radius)
+        {
+            // ? in view
+            // equipped flower or master
+            if (base_player.Instance.ItemEquipped != null && (base_player.Instance.ItemEquipped.Slug == "flower" || base_player.Instance.ItemEquipped.Slug == "key_master"))
+            {
+                // itemPickup_flower.Instance.Release();
+                item_flower.Instance.AbsorbWhite();
+                _timer = time;
+                // trigger dialogue menu
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("entity_corpse:discovered");
+            }
+        }
+    }
+}

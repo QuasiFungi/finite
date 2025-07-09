@@ -1,0 +1,139 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class menu_dead : MonoBehaviour
+{
+    public Image _background;
+    public Image _foreground;
+    public GameObject _message;
+
+    private enum State
+    {
+        NULL, FADE_IN, FADE_STAY, FADE_OUT, END
+    }
+    private State state_current;
+    //private State state_next;
+
+    private float _transitionTime;
+    private float _transitionTimer;
+
+    //private float _fadeTarget;
+    //private float _fadeCurrent;
+
+    // Misc 
+    //private bool _flagClose;
+    // Optimisation ? 
+    //private Color _placeholder;
+
+    void Awake()
+    {
+        state_current = State.NULL;
+        //state_next = State.NULL;
+        //_transitionTime = 0.5f;
+        _transitionTime = 1f;
+        _transitionTimer = 0;
+        _background.color = new Color(0.8f, 0, 0, 0);
+        _foreground.color = new Color(0.8f, 0, 0, 0);
+        _message.SetActive(false);
+        gameObject.SetActive(false);
+        //_fa
+        //_flagClose = false;
+    }
+
+    void OnEnable()
+    {
+        state_current = State.NULL;
+        //state_next = State.FADE_IN;
+        _transitionTimer = _transitionTime;
+        //_flagClose = false;
+        _message.SetActive(false);
+    }
+
+    void Update()
+    {
+        //// if not is target state 
+        //if (state_current != state_next)
+        //{
+        //    if (_transitionTimer > 0)
+        //    {
+        //        _transitionTimer -= Time.deltaTime;
+        //        if (_transitionTimer <= 0)
+        //            state_current = state_next;
+        //    }
+        //}
+        
+        // if in transition 
+        if (_transitionTimer > 0)
+        {
+            // cycle current state 
+            switch (state_current)
+            {
+                case State.NULL:
+                    // To FADE_IN 
+                    _background.color = new Color(0, 0, 0, Mathf.Lerp(0.5f, 0, _transitionTimer / _transitionTime));
+                    _foreground.color = new Color(0.8f, 0, 0, Mathf.Lerp(1f, 0, _transitionTimer / _transitionTime));
+                    break;
+                case State.FADE_IN:
+                    // To FADE_STAY 
+                    _background.color = new Color(0, 0, 0, 0.5f);
+                    _foreground.color = new Color(0.8f, 0, 0, Mathf.Lerp(0, 1f, _transitionTimer / _transitionTime));
+                    _foreground.raycastTarget = false;
+                    _message.SetActive(true);
+                    break;
+                case State.FADE_STAY:
+                    // To FADE_OUT 
+                    _background.color = new Color(0, 0, 0, 0.5f);
+                    _foreground.color = new Color(0.8f, 0, 0, Mathf.Lerp(1f, 0, _transitionTimer / _transitionTime));
+                    _background.raycastTarget = false;
+                    _foreground.raycastTarget = true;
+                    break;
+                case State.FADE_OUT:
+                    // To NULL 
+                    _background.color = new Color(0, 0, 0, Mathf.Lerp(0, 0.5f, _transitionTimer / _transitionTime));
+                    _foreground.color = new Color(0.8f, 0, 0, Mathf.Lerp(0, 1f, _transitionTimer / _transitionTime));
+                    _message.SetActive(false);
+                    break;
+            }
+            _transitionTimer -= Time.deltaTime;
+            // on transition end 
+            if (_transitionTimer <= 0)
+            {
+                // auto trigger next state [not to fade stay] 
+                if (state_current != State.FADE_IN)
+                {
+                    state_current++;
+                    // continue transition if not in end state 
+                    if (state_current != State.END)
+                        _transitionTimer = _transitionTime;
+                    else
+                        gameObject.SetActive(false);
+                }
+            }
+        }
+    }
+
+    //// Redundant ? 
+    //private void OnDisable()
+    //{
+    //    state_current = State.NULL;
+    //    _transitionTimer = 0;
+    //    //_flagClose = false;
+    //}
+
+    // Called by button ad ?
+    public void Trigger_Ad()
+    {
+        // gomenasai
+    }
+    
+    // Called by button continue ? 
+    public void Trigger_Close()
+    {
+        state_current = State.FADE_STAY;
+        _transitionTimer = _transitionTime;
+        base_player.Instance.ResetAll();
+        manager_ui.Instance.SetState(manager_ui.UIState.INGAME);
+    }
+}

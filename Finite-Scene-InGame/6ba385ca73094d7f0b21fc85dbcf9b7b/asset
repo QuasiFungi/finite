@@ -1,0 +1,39 @@
+using UnityEngine;
+
+public class itemDialogue_oneWay : base_item
+{
+    private Animator _anim;
+    private bool _isOn;
+    public string _dialogueOn;
+    public string _dialogueOff;
+    public override void Initialize()
+    {
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        // save file ?
+        _isOn = false;
+    }
+    public override void Trigger_Dialogue()
+    {
+        if (!_isOn)
+        {
+            if (_dialogueOn != null)
+            {
+                // trigger dialogue menu 
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage(_dialogueOn);
+            }
+        }
+        else if (_dialogueOff != null)
+        {
+            // trigger dialogue menu 
+            manager_ui.Instance.Trigger_DisplayMessage();
+            display_message.Instance.SetMessage(_dialogueOff);
+        }
+    }
+    public void On()
+    {
+        _isOn = true;
+        _anim.SetTrigger("On");
+    }
+}

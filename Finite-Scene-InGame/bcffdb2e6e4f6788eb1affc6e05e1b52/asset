@@ -1,0 +1,40 @@
+using UnityEngine;
+
+public class itemInteractive_switch : base_item
+{
+    private Animator _anim;
+    public itemDialogue_toggleUnary _cascade;
+    public bool _isOn;    // cache ?
+    public override void Initialize()
+    {
+        // 
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        // ? save file
+        // _isOn = 
+    }
+    public override void Trigger_Interaction()
+    {
+        // flip
+        _isOn = !_isOn;
+        _anim.SetTrigger("Flip");
+        // trigger dialogue menu 
+        manager_ui.Instance.Trigger_DisplayMessage();
+        // "Its flipped " + (_isOn ? "on" : "off") + " now"
+        // now on
+        if (_isOn)
+        {
+            // already powered
+            if (_cascade != null && _cascade.IsOn)
+                display_message.Instance.SetMessage("Flipping it doesn't seem to do anything, perhaps its broken");
+            else
+                display_message.Instance.SetMessage("Its flipped on now");
+        }
+        // already powered ?
+        else
+            display_message.Instance.SetMessage("Flipping it doesn't seem to do anything");
+        // 
+        if (_cascade != null)
+            _cascade.On();
+    }
+}

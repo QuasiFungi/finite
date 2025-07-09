@@ -1,0 +1,63 @@
+using UnityEngine;
+[System.Serializable]
+public class game_state
+{
+    // Player
+    public float[] _position;
+    public float[] _rotation;
+    public float _rotationCenter;
+    // public List<base_item> _playerInventory;
+    // public base_item _playerItemEquipped;
+    // Entity
+    // Item
+    // Basic
+    public float _durationDisplayMessage;
+    public float _fov;
+    public float _sensitivityMovement;
+    public float _sensitivityFreeCam;
+    public int _movementH;
+    public int _movementV;
+    public int _cameraH;
+    public int _cameraV;
+    public int _chirality;
+    public int _displayBattery;
+    public int _vibration;
+    public bool _audioAssist;
+    public int _colorblindAssist;
+    public float _environmentSounds;
+    public float _enemySounds;
+    public int _language;
+    public float[] _colorItemPickup;
+    public float[] _colorItemView;
+    public float[] _colorItemInteractive;
+    public float[] _colorItemDialogue;
+    // Advanced
+    public float[] _colorItemModel;
+    public float[] _colorWorldCurrent;
+    public float[] _colorWorldFrom;
+    public float[] _colorWorldTo;
+    public float[] _colorMidnight;
+    public float[] _colorSunrise;
+    public float[] _colorMidday;
+    public float[] _colorSunset;
+    public float _gameTimer;
+    public float _distanceInteract;
+    public float _sprintRatio;
+    public game_state()
+    {
+        // Player
+        // _position = new float[3];
+        // _position[0] = player_motor.Instance.Position.x;
+        // _position[1] = player_motor.Instance.Position.y;
+        // _position[2] = player_motor.Instance.Position.z;
+        // _rotation = new float[3];
+        // _rotation[0] = player_motor.Instance.Rotation.x;
+        // _rotation[1] = player_motor.Instance.Rotation.y;
+        // _rotation[2] = player_motor.Instance.Rotation.z;
+        // _rotationCenter = player_motor.Instance.RotationCenter;
+        // Entity
+        // Item
+        // Basic
+        // Advanced
+    }
+}

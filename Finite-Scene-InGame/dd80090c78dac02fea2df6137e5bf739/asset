@@ -1,0 +1,107 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class item_lantern : MonoBehaviour
+{
+    // ehhhh~
+    public static item_lantern Instance;
+    public Light _light;
+    public float _intensityOn;
+    public float _intensityOff;
+
+    public float _fuelTime;         //max fuel level
+    public float _fuelTimeWarning;  //low fuel level
+    public float _fuelTimer;        //initial fuel level
+    public float _frequencyFlicker; //random in range ?
+    void Awake()
+    {
+        Instance = this;
+        // // testing
+        // // fifteen minutes [jyouppun ?]
+        // _fuelTime = 15f * 60f;
+        // _fuelTimeWarning = 60f;
+        // _fuelTimer = _fuelTime;
+    }
+    void Update()
+    {
+        // Debug.Log(_fuelTimer);
+        // Debug.Log(Mathf.PingPong(Time.time, 1));
+        // 
+        if (base_player.Instance.ItemEquipped != null && base_player.Instance.ItemEquipped.Slug == "lantern")
+        {
+            // available
+            if (_fuelTimer > 0)
+            {
+                // sufficent
+                if (_fuelTimer > _fuelTimeWarning)
+                    _light.intensity = Mathf.Lerp(_intensityOff, _intensityOn, _fuelTimer / _fuelTime);
+                // low
+                else
+                    // flicker ? random
+                    // _light.intensity = Mathf.Lerp(_intensityOff, _intensityOn, Mathf.PingPong(Time.time, _frequencyFlicker * _fuelTimer / _fuelTimeWarning));
+                    _light.intensity = Mathf.Lerp(_intensityOff, _intensityOn, Mathf.PingPong(Time.time / _frequencyFlicker, 1));
+                    // _light.intensity = _frequencyFlicker * Mathf.Lerp(_intensityOff, _intensityOn, Mathf.PingPong(Time.time, 1));
+                // drain
+                _fuelTimer -= Time.deltaTime;
+                // out of fuel message ?
+                // all nearby entites ?
+                Collider[] hitColliders = Physics.OverlapSphere(transform.position, game_variables.Instance.CameraFar);
+                // Collider[] hitColliders = Physics.OverlapSphere(Position, test_loudness);
+                for (int i = 0; i < hitColliders.Length; i++)
+                    if (hitColliders[i].gameObject.layer == game_variables.Instance.LayerEntity)
+                    {
+                        // hitColliders[i].transform.GetComponent<base_entity>().Register_AudioPoint(transform.position, Time.time);
+                        // hitColliders[i].transform.GetComponent<entity_keeper>().Register_AudioPoint(transform.position);
+                        // hitColliders[i].transform.GetComponent<base_entity>().Register_AudioPoint(transform.position, MoveVector.magnitude * test_loudness);
+                        // Debug.Log(hitColliders[i].gameObject.name);
+                        // visbility
+                        RaycastHit hitInfo;
+                        if (Physics.Raycast(transform.position, hitColliders[i].transform.position - transform.position, out hitInfo, game_variables.Instance.CameraFar, game_variables.Instance.LayerEntityScan))
+                        {
+                            // 
+                            hitInfo.transform.GetComponent<base_entity>().SetLanternSuper();
+                        }
+                    }
+            }
+            else
+                // empty [transition ? out of fuel message]
+                _light.intensity = 0;
+        }
+        // off
+        else
+            // transition ?
+            _light.intensity = 0;
+    }
+    // 
+    public float Refill(float amount)
+    {
+        // trigger dialogue menu
+        manager_ui.Instance.Trigger_DisplayMessage();
+        display_message.Instance.SetMessage("I've refilled the lantern with oil");
+        // excess fuel
+        if (_fuelTimer + amount >= _fuelTime)
+        {
+            float difference = _fuelTime - _fuelTimer;
+            // max capacity
+            _fuelTimer = _fuelTime;
+            return difference;
+        }
+        // not enough
+        else
+        {
+            // fill er up
+            _fuelTimer += amount;
+            return amount;
+        }
+    }
+    public float Fuel
+    {
+        get { return _fuelTimer; }
+    }
+    // ???
+    public bool IsSuper
+    {
+        get { return false; }
+    }
+}

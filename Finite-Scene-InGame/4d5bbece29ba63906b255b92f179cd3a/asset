@@ -1,0 +1,32 @@
+using UnityEngine;
+
+public class itemInteractive_drawerPanel : base_item
+{
+    private Animator _anim;
+    public itemInteractive_deskCabinet _cabinet;
+    private bool _isOn;    // cache ?
+    public override void Initialize()
+    {
+        // 
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        // ? save file
+        _isOn = false;
+    }
+    public override void Trigger_Interaction()
+    {
+        // trigger dialogue menu
+        manager_ui.Instance.Trigger_DisplayMessage();
+        if (_isOn)
+            display_message.Instance.SetMessage("Its stuck pressed in");
+        else
+            display_message.Instance.SetMessage("Pressing this seems to have triggered some mechanism inside");
+        // 
+        _isOn = true;
+        // _anim.SetTrigger("On");
+        _anim.SetBool("IsOpen", _isOn);
+        // 
+        if (_cabinet != null)
+            _cabinet.Unlock();
+    }
+}

@@ -1,0 +1,13 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class test_healthBar : MonoBehaviour
+{
+    public Image fill;
+    void Update()
+    {
+        fill.fillAmount = base_player.Instance.Health;
+    }
+}

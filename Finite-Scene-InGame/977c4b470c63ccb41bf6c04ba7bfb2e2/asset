@@ -1,0 +1,117 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.EventSystems;
+
+public class item_view : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
+{
+    public static item_view Instance;
+    public Transform _anchor;
+    
+    private List<GameObject> _models;
+    private bool _isActive;
+    private Vector2 _bufferPressPosition;       //last pressed pointer position 
+    private Vector2 _pressPosition;
+    private Vector2 _pointerDrag;
+
+    private float _sensitivityRotation;         // ??? 
+
+    void Awake()
+    {
+        Instance = this;
+        
+        _sensitivityRotation = 2.5f;
+        //Reset();    // redundant ?
+        // get all anchor children ?
+        _models = new List<GameObject>();
+        int count = _anchor.childCount;
+        for(int i = 0; i < count; i++)
+            _models.Add(_anchor.GetChild(i).gameObject);
+    }
+
+    void OnDisable()
+    {
+        Reset();
+        ClearModels();
+    }
+
+    private void Reset()
+    {
+        _isActive = false;
+        _pressPosition = Vector2.zero;
+        _pointerDrag = Vector2.zero;
+    }
+
+    public void ClearModels()
+    {
+        // print(gameObject.name + ": " + _models.Count);
+        foreach (GameObject item in _models)
+            // safety ?
+            if (item != null)
+                item.SetActive(false);
+        // foreach (Transform model in _anchor)
+                //     // safety ?
+                //     if(model != null)
+                //         model.gameObject.SetActive(false);
+    }
+
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        // store press position in buffer 
+        _bufferPressPosition = eventData.position;
+        if (!_isActive)
+        {
+            _pressPosition = eventData.pressPosition;
+            _isActive = true;
+        }
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        // if active and 'active' pointer 
+        if (_isActive && eventData.pressPosition == _pressPosition)
+        {
+            _pointerDrag = eventData.position - eventData.pressPosition;
+        }
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        // check for tap 
+        if (eventData.position == _bufferPressPosition)
+        {
+            input_controller.Instance.RegisterAction(input_controller.ActionType.INTERACT_ITEMVIEW);
+            _bufferPressPosition = Vector2.zero;
+        }
+        // if active and 'active' pointer 
+        if (_isActive && eventData.pressPosition == _pressPosition)
+        {
+            _isActive = false;
+            _pointerDrag = Vector2.zero;
+        }
+    }
+
+    // returns rotation [displacement] X amount for active viewed item model [axis flip ?] 
+    public float ViewRotationX
+    {
+        get { return -_pointerDrag.y / _sensitivityRotation; }
+    }
+
+    // returns rotation [displacement] Y amount for active viewed item model [axis flip ?] 
+    public float ViewRotationY
+    {
+        get { return _pointerDrag.x / _sensitivityRotation; }
+    }
+
+    // cached press position 
+    public Vector2 BufferPositionTap
+    {
+        get { return _bufferPressPosition; }
+    }
+
+    // true when pointer pressed 
+    public bool IsActive
+    {
+        get { return _isActive; }
+    }
+}

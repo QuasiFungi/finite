@@ -1,0 +1,930 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class base_entity : MonoBehaviour
+{
+    protected UnityEngine.AI.NavMeshAgent _agent;
+
+    protected Vector3 _positionSpawn;
+    // protected Vector3 _positionDetected;    // vision | audio
+    // protected Vector3 _positionKnown;       // aware
+    public List<Transform> _targets;        // all [implicit priority ?]
+    protected Transform _target;            // active ?
+    // public float _awareTime;
+    protected float _awareTimer;
+    protected bool _isAware;
+
+    // testing
+    // protected Vector3 _positionMove;        // where to
+    protected Transform _move;        // where to
+
+    // vision
+    public Transform _visionPoint;
+    public float _visionRadius;
+    public float _visionAngle;
+    protected Vector3 _positionVision;
+    // audio, collision
+    protected class EventPoint
+    {
+        public Vector3 _position;
+        public float _time;
+        public EventPoint(Vector3 position, float time)
+        {
+            _position = position;
+            _time = time;
+        }
+    }
+    // private List<AudioPoint> _audioPoints;      // registered audio sources
+    protected EventPoint _audioPoint;             // registered audio source
+    public float _attentionTime;                // ignore/forget older sounds ? events
+    public float _sensitivityHearing;              // minimum detectable loudness ?
+    protected Vector3 _positionAudio;
+    // collision ?
+    // protected Vector3 _positionLumen;
+    protected Vector3 _positionParallax;
+    protected Vector3 _positionSonar;
+
+    protected EventPoint _collisionPoint;
+    public float _collisionTime;
+    protected Vector3 _positionCollision;
+
+    // state?
+    // protected enum State
+    // {
+    //     NULL, 
+    //     IDLE,
+    //     PATROL,
+    //     ENGAGE,
+    //     ENCIRCLE, 
+    //     DEAD,
+    // }
+    // protected State _state;     // 
+    // protected string _substate; // 
+    // public string _stateDefault;    // Waypoints, Cooldown, etc
+    // public base_state _stateDefault;    // Waypoints, Cooldown, etc ?
+    // protected string _state;        // current
+    // protected float _stateTimer;    // time since current set
+    protected float _sensorTimer;    // time since sensor event
+    public float _health;
+    protected float _healthInst;
+
+    public MeshRenderer _mesh;      // 
+    public MeshCollider _collider;  // 
+    
+    public List<Waypoint> _waypoints;
+
+    public bool _debugSensor;
+    
+    // private PandaBehaviour _bt;
+    protected bool _isBT;
+
+    // protected entity_motor _motor;
+    // protected entity_animation _anim;
+    // public float _proximityMin;     // * testing close distance check ?
+    // public float _proximityMax;     // * testing near distance check ?
+
+    protected AudioSource _audio;
+
+    protected bool _isFlower;       // proximity visibility
+    protected bool _isShroom;       // proximity visibility
+    protected bool _isFossil;       // collision
+    protected bool _isLanternSuper; // proximity visibility
+    protected int _isWisp;          // wisp entity event
+
+    public GameObject _wisp;
+
+    public List<GameObject> _hitTrigger;    //entity damage triggers
+
+    public Animator _anim;
+    
+    void Awake()
+    {
+        _agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
+
+        _positionSpawn = transform.position;
+        // _detectedVision = Vector3.zero;
+        // _detectedVision = GetWaypointNearest(transform.position);
+        // _detectedVision = GetWaypointRandom();
+        // _detectedAudio = Vector3.zero;
+        // _detectedAudio = _detectedVision;
+        // _positionMove = _detectedVision;
+        
+        // make new
+        _move = Instantiate(new GameObject(), transform.position, Quaternion.identity).transform;
+        _move.gameObject.name = gameObject.name + "-move";
+        
+        // initialize new empty at current position ?
+        // _move = new GameObject();
+        
+        // _visionPoint = transform.FindChild("_visionPoint");
+        // _visionRadius = 
+        // _state = State.IDLE;
+        // _state = State.NULL;
+        // ???
+        // _state = null;
+        // // alive
+        // if (_healthInst > _health)
+        // {
+        //     if (_state == null)
+        //     {
+        //         // // (re)set
+        //         // _stateTimer = 0;
+        //         // _state = _stateDefault;
+        //     }
+        // }
+        // if (_state != "Dead")
+        // {
+        //     // // (re)set
+        //     // _stateTimer = 0;
+        //     // _state = "Dead";
+        // }
+        // _stateTimer = 0;
+        // SetState(_stateDefault);
+        // _bt = GetComponent<PandaBehaviour>();
+        _audio = GetComponent<AudioSource>();
+
+        _isBT = false;
+    }
+
+    void Start()
+    {
+        Initialize();
+    }
+
+    void OnDrawGizmos()
+    {
+        // move marker
+        Gizmos.color = new Color32(175, 255, 84, 125);
+        if (_move != null)
+        {
+            Gizmos.DrawSphere(_move.position, 1f);
+            Gizmos.color = new Color32(255, 255, 255, 125);
+            Gizmos.DrawWireSphere(_move.position, 15f);
+            // Gizmos.DrawWireSphere(_move.position, game_variables.Instance.CameraFar);
+        }
+        // target marker
+        Gizmos.color = new Color32(245, 66, 66, 125);
+        if (_target != null)
+        {
+            Gizmos.DrawSphere(_target.position, 1f);
+            Gizmos.color = new Color32(255, 255, 255, 125);
+            Gizmos.DrawWireSphere(_target.position, 15f);
+            // Gizmos.DrawWireSphere(_target.position, game_variables.Instance.CameraFar);
+        }
+        // vision forward
+        if (_visionPoint != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawRay(_visionPoint.position, _visionPoint.forward * _visionRadius);
+        }
+        // entity forward
+        Gizmos.color = Color.blue;
+        Gizmos.DrawRay(transform.position, transform.forward * 10f);
+    }
+
+    void Update()
+    {
+        // * testing
+        // if (_state != null)
+        //     Debug.Log(gameObject.name + ":\t" + _state);
+        // forget old sounds ?
+        // List<AudioPoint> toRemove = new List<AudioPoint>();
+        // foreach (AudioPoint point in _audioPoints)
+        //     if (Time.time - point._time > _attentionTime)
+        //         toRemove.Add(point);
+        // foreach (AudioPoint point in toRemove)
+        //     _audioPoints.Remove(point);
+
+        // forget if not already ???
+        if (_audioPoint != null && Time.time - _audioPoint._time > _attentionTime)
+            _audioPoint = null;
+        // forget if not already ???
+        if (_collisionPoint != null && Time.time - _collisionPoint._time > _attentionTime)
+            _collisionPoint = null;
+        
+        // 
+        // if (_healthInst > _health)
+        // * testing
+        // ??? awareness
+        if (Sensor_Vision())
+            // _awareTimer += _awareTime * Time.deltaTime * Vector3.Distance(transform.position, _positionVision) / _visionRadius;
+            _awareTimer += _attentionTime * Time.deltaTime * Vector3.Distance(transform.position, _positionVision) / _visionRadius;
+        else if (_awareTimer > 0)
+            _awareTimer -= Time.deltaTime;
+        // if (_awareTimer > _awareTime)
+        if (_awareTimer > _attentionTime)
+        {
+            // _awareTimer = _awareTime;
+            _awareTimer = _attentionTime;
+            _isAware = true;
+        }
+        else if (_awareTimer < 0)
+        {
+            _awareTimer = 0;
+            _isAware = false;
+        }
+        // if (_awareTimer > 0)
+        //     _awareTimer -= Time.deltaTime;
+        // call state machine execution function/implementation ?
+        // ???
+        // State_Machine();
+        // update sensors
+        // // - vision
+        // Sensor_Vision();
+        // // - audio
+        // Sensor_Audio();
+        // foreach ()
+        // // - collider
+
+        // ticking [overflow ?]
+        // _stateTimer += Time.deltaTime;
+        _sensorTimer += Time.deltaTime;
+        _sensorTimer = Mathf.Clamp(_sensorTimer, 0, _attentionTime);
+
+        // // process state
+        // switch (_state)
+        // {
+        //     case State.NULL:
+        //         State_Null();
+        //         break;
+        //     case State.IDLE:
+        //         State_Idle();
+        //         break;
+        //     case State.PATROL:
+        //         State_Patrol();
+        //         break;
+        //     case State.ENGAGE:
+        //         State_Engage();
+        //         break;
+        //     case State.ENCIRCLE:
+        //         State_Encircle();
+        //         break;
+        //     case State.DEAD:
+        //         State_Dead();
+        //         break;
+        // }
+        // // Debug.Log(_state);
+        Update_Extra();
+    }
+
+    // protected void SetState(string state)
+    // {
+    //     // new ?
+    //     // if (_state != state)
+    //     // (re)set
+    //     _stateTimer = 0;
+    //     // set
+    //     _state = state;
+    // }
+
+    // public void SetState(base_state state)
+    // {
+    //     _stateTimer = 0;
+    //     _state = state;
+    //     StartCoroutine(_state.Tick());
+    // }
+
+    // state machine execution routine
+    // protected virtual void State_Machine()
+    // {
+    //     // // execute active state ?
+    //     // if (_state != null)
+    //     //     // terminate behavior chain execution with custom behavior
+    //     //     typeof(base_entity).GetMethod(_state).Invoke(this, new object[]{});
+    // }
+
+    // default dead behaviour
+    // protected virtual void State_Disabled()
+    // {
+    //     // wait
+    //     if (_stateTimer > 5f)
+    //     {
+    //         // resurrect
+    //         Reset();
+    //         // SetState(_stateDefault);
+    //     }
+    // }
+
+    // ??? [protected virtual ?]
+    protected virtual void Initialize()
+    {
+        _healthInst = _health;
+        // ???
+        // _positionDetected = Vector3.zero;
+        // _positionKnown = Vector3.zero;
+        _target = null;
+        _awareTimer = 0;
+        _isAware = false;
+        // 
+        // _positionMove = GetWaypointRandom();
+        _move.position = GetWaypointRandom();
+        // 
+        _positionVision = Vector3.zero;
+        // 
+        // _attentionTimer = 0;
+        // _audioPoints = new List<AudioPoint>();
+        _audioPoint = null;
+        _positionAudio = Vector3.zero;
+        // 
+        _positionParallax = Vector3.zero;
+        _positionSonar = Vector3.zero;
+        // 
+        _collisionPoint = null;
+        _positionCollision = Vector3.zero;
+        // 
+        _sensorTimer = _attentionTime;
+        // 
+        _isFlower = false;
+        _isShroom = false;
+        _isFossil = false;
+        _isLanternSuper = false;
+        _isWisp = 0;
+    }
+
+    protected virtual void Update_Extra()
+    {
+        // custom variable stuff ?
+    }
+
+    public void Register_Damage(float value)
+    {
+        // oof
+        _healthInst -= value;
+        // if (_healthInst <= 0)
+        //     // _state = State.DEAD;
+        //     SetState("State_Disabled");
+    }
+
+    // ??? called by lantern super on light cast ?
+    // public void SetLanternSuper(float intensity)
+    public void SetLanternSuper()
+    {
+        // alive
+        if (_healthInst > 0)
+            _isLanternSuper = true;
+    }
+    // unused ? vision parallax sensor specific ?
+    public void SetFlower()
+    {
+        _isFlower = true;
+    }
+    // thing only ?
+    public void SetShroom()
+    {
+        _isShroom = true;
+    }
+    // called by wisp entity on absorb ?
+    public void SetWisp()
+    {
+        _isWisp = -1;
+    }
+
+    #region NavMesh/Waypoint Stuff
+
+    // position in waypoint
+    protected bool IsWaypoint(Vector3 position)
+    {
+        foreach (Waypoint waypoint in _waypoints)
+            // if (position == waypoint.Position)
+            if (Vector3.Distance(position, waypoint.Position) <= waypoint.radius)
+                return true;
+        return false;
+    }
+
+    // position in waypoint
+    protected bool IsWaypoint(Vector3 position, float distance)
+    {
+        foreach (Waypoint waypoint in _waypoints)
+            // if (position == waypoint.Position)
+            if (Vector3.Distance(position, waypoint.Position) <= distance)
+                return true;
+        return false;
+    }
+
+    // position in valid waypoint ???
+    protected bool IsWaypointValid(Vector3 position)
+    {
+        foreach (Waypoint waypoint in Filter_Waypoints())
+            // if (position == waypoint.Position)
+            if (Vector3.Distance(position, waypoint.Position) <= waypoint.radius + 1f)
+                return true;
+        return false;
+    }
+
+    protected Vector3 GetWaypointDirection()
+    {
+        foreach (Waypoint waypoint in Filter_Waypoints())
+            // move in/at waypoint
+            if (Vector3.Distance(_move.position, waypoint.Position) <= waypoint.radius)
+                // get offset
+                return  waypoint.PositionDirection(_target == null ? _positionAudio : _target.position);
+        // no offset [not valid waypoint]
+        // return _move.position;
+        return _target == null ? _positionAudio : _target.position;
+    }
+
+    // ??? nearest, non-identical else default to same
+    // protected Vector3 GetWaypointNearest(Vector3 position)
+    // {
+    //     float distance = float.MaxValue;
+    //     Vector3 target = position;
+    //     // Debug.Log(Filter_Waypoints().Count);
+    //     foreach (Waypoint waypoint in Filter_Waypoints())
+    //     {
+    //         // ? why it do
+    //         // Debug.Log(position + "\t" + waypoint);
+    //         // ignore if same
+    //         // if (position != waypoint.Position)
+    //         // ignore if almost same
+    //         if (Vector3.Distance(position, waypoint.Position) > waypoint.radius)
+    //         {
+    //             // ???
+    //             if (Vector3.Distance(position, waypoint.Position) < distance)
+    //             {
+    //                 distance = Vector3.Distance(position, waypoint.Position);
+    //                 target = waypoint.Position;
+    //             }
+    //         }
+    //     }
+    //     return target;
+    // }
+
+    // random waypoint, else current position
+    protected Vector3 GetWaypointRandom()
+    {
+        List<Waypoint> waypoints = Filter_Waypoints();
+        // Debug.Log("random\t" + waypoints.Count);
+        // default
+        if (waypoints.Count == 0)
+            return transform.position;
+        int id = Random.Range(0, waypoints.Count);
+        return waypoints[id].PositionRandom();
+    }
+
+    // nearby waypoint, else current position
+    protected Vector3 GetWaypointNearby()
+    {
+        List<Waypoint> waypoints = Filter_Waypoints();
+        // Debug.Log("nearby\t" + waypoints.Count);
+        // default
+        if (waypoints.Count == 0)
+            return transform.position;
+        // int id = Random.Range(0, waypoints.Count);
+        // sort by distance ascending [cost ?]
+        waypoints.Sort((w1, w2)=>Vector3.Distance(transform.position, w1.Position).CompareTo(Vector3.Distance(transform.position, w2.Position)));
+        // random from n closest ?
+        return waypoints[0].PositionRandom();
+    }
+
+    // protected Vector3 GetWaypointDirection()
+    // {
+    //     List<Waypoint> waypoints = Filter_Waypoints();
+    //     // Debug.Log("direction\t" + waypoints.Count);
+    //     // default
+    //     if (waypoints.Count == 0)
+    //         return transform.position;
+    //     // int id = Random.Range(0, waypoints.Count);
+    //     // sort by distance ascending [cost ?]
+    //     waypoints.Sort((w1, w2)=>Vector3.Distance(transform.position, w1.Position).CompareTo(Vector3.Distance(transform.position, w2.Position)));
+    //     // random from n closest ?
+    //     return waypoints[0].PositionDirection(_target == null ? _positionAudio : _target.position);
+    // }
+
+    // // random nearby waypoint, else current position
+    // sort by [navmesh] distance
+    // pick random from n closest
+    // protected Vector3 GetWaypointNearby()
+    // {
+    //     List<Waypoint> waypoints = Filter_Waypoints();
+    //     List<Waypoint> near = new List<Waypoint>();
+    //     foreach (Waypoint point in waypoints)
+    //         if (Vector3.Distance(transform.position, point.Position) <= _proximityMax)
+    //             near.Add(point);
+    //     // default
+    //     if (near.Count == 0)
+    //         return transform.position;
+    //     int id = Random.Range(0, near.Count);
+    //     return near[id].PositionRandom;
+    // }
+
+    // override must always call base ?
+    protected virtual List<Waypoint> Filter_Waypoints()
+    {
+        List<Waypoint> waypoints = new List<Waypoint>();
+        foreach (Waypoint waypoint in _waypoints)
+            if (waypoint.IsEnabled)
+                waypoints.Add(waypoint);
+        return waypoints;
+    }
+
+    // on alerted ?
+    protected void EnableWaypoints()
+    {
+        foreach (Waypoint waypoint in Filter_Waypoints())
+            waypoint.Enable();
+    }
+
+    #endregion
+
+    #region Sensor
+
+    // default ? [scan] [active sensor ?] [luminosity check ?]
+    protected bool Sensor_Vision()
+    {
+        // no vision point specified [multiple ?]
+        if (_visionPoint == null)
+            return false;
+        bool detected = false;
+        // check targets ?
+        foreach (Transform target in _targets)
+        {
+            // in cone
+            // if (Vector3.Angle(player_motor.Instance.Position - _visionPoint.position, _visionPoint.forward) < _visionAngle)
+            if (Vector3.Angle(target.position - _visionPoint.position, _visionPoint.forward) < _visionAngle)
+            {
+                RaycastHit hitInfo;
+                // ??? all possible layers ?
+                if (Physics.Raycast(_visionPoint.position, player_motor.Instance.Position - _visionPoint.position, out hitInfo, _visionRadius, game_variables.Instance.LayerPlayerScan))
+                {
+                    // spotted
+                    // if (hitInfo.transform.gameObject.layer == game_variables.Instance.LayerPlayer)
+                    if (hitInfo.transform.gameObject.layer == target.gameObject.layer)
+                    {
+                        // there you are~
+                        // _detectedVision = hitInfo.transform.position;
+                        // _attentionTimer = _attentionTime;
+                        // _positionDetected = hitInfo.transform.position;
+                        _positionVision = hitInfo.transform.position;
+                        if (_debugSensor)
+                            Debug.Log("vision");
+                        detected = true;
+                        // ???
+                        // _target = hitInfo.transform;
+                        if (hitInfo.transform.gameObject.layer == game_variables.Instance.LayerPlayer)
+                            _target = target.GetChild(1).GetComponent<Transform>();
+                        else
+                            _target = target;
+                        _sensorTimer = 0;
+                    }
+                }
+            }
+        }
+        // // clear active target ? [null error chance ?]
+        // if (!detected)
+        //     _target = null;
+        // overlap with isbored ? remember location ?
+        // if (!detected && _sensorTimer < _attentionTime)
+        //     detected = true;
+        return detected;
+    }
+
+    // passive sensor ?
+    // protected virtual bool Sensor_Audio(Vector3 position)
+    protected bool Sensor_Audio()
+    {
+        // Debug.Log(Time.time + "\t" + _audioPoints.Count);
+        // Debug.Log(_audioPoints.Count);
+        // no audio event(s)
+        // if (_audioPoints.Count == 0)
+        //     return false;
+        if (_audioPoint == null)
+            return false;
+        // bool detected = false;
+        // alert to nearest/loudest audible source
+        // float distanceMin = float.MaxValue;
+        // float timeMax = float.MinValue;
+        // Vector3 position = Vector3.zero;
+        // set detected audio position
+        // foreach (AudioPoint point in _audioPoints)
+        // {
+            // float distance = Vector3.Distance(point._position, transform.position);
+            // ??? most recent or closest audio source ? target check ? [priority ?] [never false ?]
+            // if (point._time < timeMin || distance < distanceMin)
+        // if (point._time > timeMax)
+        // if (_audioPoint._time > timeMax)
+        // {
+        // distanceMin = distance;
+        // timeMax = _audioPoint._time;
+        // _detectedAudio = point._position;
+        _positionAudio = _audioPoint._position;
+        // _attentionTimer = _attentionTime;
+        // position = point._position;
+        // Debug.Log("there~\t" + point);
+        // detected = true;
+        // ??? redundant ?
+        _sensorTimer = 0;
+        // }
+        if (_debugSensor)
+            Debug.Log("audio");
+        // }
+        // clear cache ? [clogging ?]
+        // _audioPoints.Clear();
+        // return detected;
+        return true;
+    }
+
+    // called by audio event ?
+    // public void Register_AudioPoint(Vector3 source, float time)
+    // public void Register_AudioPoint(Vector3 source, float intensity)
+    // public void Register_AudioPoint(Vector3 source, float loudness)
+    // public void Register_AudioPoint(Vector3 source)
+    public void Register_AudioPoint(Vector3 source, float range)
+    {
+        // Debug.Log("heard");
+        // AudioEvent event;
+        // event.point = source;
+        // event.intensity = 
+        // _audioPoints.Add(new AudioPoint(source, _attentionTime));
+        // audible
+        float distance = Vector3.Distance(source, transform.position);
+        // if (Vector3.Distance(source, transform.position) <= _distanceHearing && loudness >= _sensitivityHearing)
+        // if (Vector3.Distance(source, transform.position) <= _distanceHearing)
+        // linear ? non-linear ?
+        if (distance < range && distance / range >= _sensitivityHearing)
+            // _audioPoints.Add(new AudioPoint(source, time));
+            // _audioPoints.Add(new AudioPoint(source, Time.time));
+            _audioPoint = new EventPoint(source, Time.time);
+        // Debug.Log(Time.time + "\t" + _audioPoints.Count);
+        
+        // alert to nearest/loudest source
+        // if (Vector3.Distance(source, transform.position) < Vector3.Distance(_detectedAudio, transform.position))
+        // {
+        // _detectedAudio = source;
+        // _attentionTimer = _attentionTime;
+            // Debug.Log("there~\t" + point);
+        // }
+    }
+
+    // // ???
+    // protected void Clear_Audio()
+    // {
+    //     // ???
+    //     _audioPoints.Clear();
+    // }
+
+    // protected bool Sensor_VisionMotion()
+    protected bool Sensor_Parallax()
+    {
+        // thing specific ?
+        // no vision point specified [multiple ?]
+        if (_visionPoint == null)
+            return false;
+        bool detected = false;
+        // check targets ?
+        foreach (Transform target in _targets)
+        {
+            // in cone
+            // if (Vector3.Angle(player_motor.Instance.Position - _visionPoint.position, _visionPoint.forward) < _visionAngle)
+            if (Vector3.Angle(target.position - _visionPoint.position, _visionPoint.forward) < _visionAngle)
+            {
+                RaycastHit hitInfo;
+                // ??? all possible layers ?
+                if (Physics.Raycast(_visionPoint.position, player_motor.Instance.Position - _visionPoint.position, out hitInfo, _visionRadius, game_variables.Instance.LayerPlayerScan))
+                {
+                    // spotted
+                    // if (hitInfo.transform.gameObject.layer == game_variables.Instance.LayerPlayer)
+                    if (hitInfo.transform.gameObject.layer == target.gameObject.layer)
+                    {
+                        // moved [patchwork ?]
+                        if (_positionParallax != hitInfo.transform.position)
+                        {
+                            // there you are~
+                            // _detectedVision = hitInfo.transform.position;
+                            // _attentionTimer = _attentionTime;
+                            // _positionDetected = hitInfo.transform.position;
+                            // not first detect ?
+                            if (_positionParallax != Vector3.zero)
+                            {
+                                detected = true;
+                                // ???
+                                // _target = hitInfo.transform;
+                                if (_debugSensor)
+                                    Debug.Log("parallax");
+                                _target = target;
+                                _sensorTimer = 0;
+                            }
+                            _positionParallax = hitInfo.transform.position;
+                        }
+                    }
+                }
+            }
+        }
+        // // clear active target ? [null error chance ?]
+        // if (!detected)
+        //     _target = null;
+        // // overlap with isbored ? remember location ?
+        // if (!detected)
+        //     _positionParallax = Vector3.zero;
+        return detected;
+    }
+
+    // protected bool Sensor_AudioEcho()
+    protected bool Sensor_Sonar()
+    {
+        // thing specific ?
+        // // all visible entites ?
+        // Collider[] hitColliders = Physics.OverlapSphere(transform.position, game_variables.Instance.CameraFar);
+        // // Collider[] hitColliders = Physics.OverlapSphere(Position, test_loudness);
+        // for (int i = 0; i < hitColliders.Length; i++)
+        //     if (hitColliders[i].gameObject.layer == game_variables.Instance.LayerPlayer)))
+        //         // hitColliders[i].transform.GetComponent<base_entity>().Register_AudioPoint(transform.position, Time.time);
+        //         // hitColliders[i].transform.GetComponent<entity_keeper>().Register_AudioPoint(transform.position);
+        //         // hitColliders[i].transform.GetComponent<base_entity>().Register_AudioPoint(transform.position, MoveVector.magnitude * test_loudness);
+        //         // Debug.Log(hitColliders[i].gameObject.name);
+        bool detected = false;
+        RaycastHit hitInfo;
+        foreach (Transform target in _targets)
+            if (Physics.Raycast(transform.position, target.position - transform.position, out hitInfo, game_variables.Instance.CameraFar))
+                if (hitInfo.transform.gameObject.layer == game_variables.Instance.LayerPlayer)
+                {
+                    _positionSonar = hitInfo.transform.position;
+                    if (_debugSensor)
+                        Debug.Log("sonar");
+                    detected = true;
+                }
+        return detected;
+    }
+
+    protected bool Sensor_Omni()
+    {
+        // chanter/hound specific ?
+        if (_targets != null && _targets.Count > 0)
+        {
+            // _target = _targets[0].position;
+            // _target = _targets[0];
+            // highest priority ?
+            if (_debugSensor)
+                Debug.Log("omni");
+            _target = _targets[_targets.Count - 1];
+            // player
+            if (_target.gameObject.layer == game_variables.Instance.LayerPlayer)
+                // get rotating body ?
+                _target = _target.GetChild(1).GetComponent<Transform>();
+            return true;
+        }
+        return false;
+    }
+
+    protected bool Sensor_Collision()
+    {
+        // no collision event
+        if (_collisionPoint == null)
+            return false;
+        // set detected collision position
+        _positionCollision = _collisionPoint._position;
+        // ??? redundant ?
+        _sensorTimer = 0;
+        if (_debugSensor)
+            Debug.Log("collision");
+        // return detected;
+        return true;
+    }
+
+    // called by bumping entity/player ?
+    public void Register_CollisionPoint(Vector3 source)
+    {
+        _collisionPoint = new EventPoint(source, Time.time);
+        if (base_player.Instance.ItemEquipped != null && base_player.Instance.ItemEquipped.Slug == "fossil")
+        {
+            // check facing direction ? fov ?
+            _isFossil = true;
+        }
+    }
+
+    #endregion
+
+    // *testing
+    public void ToggleSpawn()
+    {
+        // toggle gameObject enabled
+        gameObject.SetActive(!gameObject.activeSelf);
+        // return gameObject.activeSelf ? "Spawn:On" : "Spawn:Off";
+        if (gameObject.activeSelf)
+            transform.position = _positionSpawn;
+    }
+
+    // *testing
+    public void ToggleBT()
+    {
+        // toggle panda behaviour enabled
+        // _bt.SetActive(!_bt.activeSelf);
+        // return _bt.activeSelf ? "BT:On" : "BT:Off";
+        _isBT = !_isBT;
+    }
+
+    // state flow/control logic ?
+    // protected void State_Machine()
+    // {
+    //     // // process state
+    //     // switch (_state)
+    //     // {
+    //     //     case State.NULL:
+    //     //         return State_Null();
+    //     //         break;
+    //     //     case State.IDLE:
+    //     //         return State_Idle();
+    //     //         break;
+    //     //     case State.PATROL:
+    //     //         return State_Patrol();
+    //     //         break;
+    //     //     case State.ENGAGE:
+    //     //         return State_Engage();
+    //     //         break;
+    //     //     case State.ENCIRCLE:
+    //     //         return State_Encircle();
+    //     //         break;
+    //     //     case State.DEAD:
+    //     //         return State_Dead();
+    //     //         break;
+    //     // }
+    //     // // extend behavior execution chain
+    //     // // return Alive();
+    //     // // ??? return to spawn [position, rotation]
+    //     // // _mesh.enabled = false;
+    //     // // transform.position = _positionSpawn;
+    //     // // transform.rotation = _rotationSpawn;
+    //     // // terminate behavior execution chain
+    //     // return null;
+    //     // if ()
+    // }
+
+    // #region State
+
+    // default iterate waypoints ?
+    // protected virtual string State_Null()
+    // {
+    //     // // in view radius
+    //     // if ((transform.position - player_motor.Instance.Position).magnitude < game_variables.Instance.CameraFar)
+    //     // // if ((transform.position - _target.position).magnitude < game_variables.Instance.FarCamera)
+    //     // {
+    //     //     // iterate waypoints ?
+    //     //     _state = State.IDLE;
+    //     //     // return "Waypoints";
+    //     // }
+    //     // 
+    //     return null;
+    // }
+
+    // protected virtual string State_Idle()
+    // {
+    //     // // outside view radius ?
+    //     // if ((transform.position - player_motor.Instance.Position).magnitude > game_variables.Instance.CameraFar)
+    //     // // if ((transform.position - _target.position).magnitude > game_variables.Instance.FarCamera)
+    //     // {
+    //     //     // wait ?
+    //     //     _state = State.NULL;
+    //     //     return "Waypoints";
+    //     // }
+    //     // 
+    //     return null;
+    // }
+
+    // // basic navigation
+    // protected virtual string State_Patrol()
+    // {
+    //     // // waypoint assigned.!.
+    //     // if (IsWaypoint(_positionMove))
+    //     //     // ...get nearest valid waypoint
+    //     //     _positionMove = GetWaypointNearest(transform.position);
+    //     // // reached way point...
+    //     // if (transform.position == _positionMove)
+    //     // {
+    //     //     // ...get next valid waypoint
+    //     //     _positionMove = GetWaypointRandom();
+    //     //     // ...idle
+    //     //     _state = State.IDLE;
+    //     // }
+    //     // else
+    //     //     // .!.keep moving
+    //     //     _agent.SetDestination(_positionMove);
+    //     return null;
+    // }
+
+    // protected virtual string State_Encircle()
+    // {
+    //     // 
+    //     return null;
+    // }
+
+    // protected virtual string State_Engage()
+    // {
+    //     // 
+    //     return null;
+    // }
+
+    // protected virtual string State_Dead()
+    // {
+    //     // 
+    //     return null;
+    // }
+
+    // #endregion
+
+    // protected virtual void Update_Extra()
+    // {
+    //     // 
+    //     if (_attentionTimer > 0)
+    //         _attentionTimer -= Time.deltaTime;
+    // }
+}

@@ -1,0 +1,143 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class input_controller : MonoBehaviour
+{
+    public static input_controller Instance;
+
+    //private float _sprintRatio;     //...speed of movement for it to be considered sprinting 
+
+    public enum ActionType
+    {
+        MOVE_START, MOVE_END,
+        INTERACT, INTERACT_ITEMVIEW, 
+        //TRIGGER_MENU,
+        //TRIGGER_BACKPACK, TRIGGER_CAMERA,
+        //TRIGGER_MENULOAD,
+        //TRIGGER_SETTINGS, TRIGGER_MENUQUIT,
+    }
+
+    void Awake()
+    {
+        Instance = this;
+        
+        // Initialize Constants 
+        //_sprintRatio = 2 / 3;
+    }
+
+    // For UI Triggers ? 
+    public void RegisterAction(string action)
+    {
+        RegisterAction((ActionType)System.Enum.Parse(typeof(ActionType), action));
+    }
+
+    // For Touch Input Triggers 
+    public void RegisterAction(ActionType action)
+    {
+        switch (action)
+        {
+            case ActionType.INTERACT:
+                // check if the menu or any of its sub states 
+                if (manager_ui.Instance.IsInMenu)
+                    manager_ui.Instance.SetState(manager_ui.UIState.INGAME);
+                player_controller.Instance.AddAction(player_controller.ActionType.INTERACT);
+                break;
+            case ActionType.INTERACT_ITEMVIEW:
+                // check if the menu or any of its sub states 
+                if (manager_ui.Instance.IsInMenu)
+                    manager_ui.Instance.SetState(manager_ui.UIState.INGAME);
+                else
+                    player_controller.Instance.AddAction(player_controller.ActionType.INTERACT_ITEMVIEW);
+                break;
+            case ActionType.MOVE_START:
+                // Debug.Log("ARGH");
+                if (manager_ui.Instance.IsInMenu)
+                    manager_ui.Instance.SetState(manager_ui.UIState.INGAME);
+                // do not fire if already moving ? [cause of spook?] 
+                player_controller.Instance.AddAction(player_controller.ActionType.MOVE);        //...register Event with Player Controller 
+                break;
+            case ActionType.MOVE_END:
+                // Debug.Log("STAHP");
+                player_controller.Instance.StopMove();                                          //...send event for stopping movement 
+                break;
+            //case ActionType.TRIGGER_MENU:
+            //    //game_master.Instance.SetState(game_master.GameState.INGAME_MENU);
+            //    manager_ui.Instance.SetState(manager_ui.UIState.INGAME_MENU);
+            //    break;
+            //case ActionType.TRIGGER_BACKPACK:
+            //    //game_master.Instance.SetState(game_master.GameState.INGAME_MENU);
+            //    manager_ui.Instance.SetState(manager_ui.UIState.INGAME_BACKPACK);
+            //    break;
+            //case ActionType.TRIGGER_CAMERA:
+            //    if (manager_ui.Instance.IsInMenu)
+            //        manager_ui.Instance.SetState(manager_ui.UIState.INGAME);
+            //    break;
+            //case ActionType.TRIGGER_MENULOAD:
+            //    //game_master.Instance.SetState(game_master.GameState.INGAME_MENU);
+            //    manager_ui.Instance.SetState(manager_ui.UIState.MENU_LOAD);
+            //    break;
+            //case ActionType.TRIGGER_SETTINGS:
+            //    //game_master.Instance.SetState(game_master.GameState.INGAME_MENU);
+            //    manager_ui.Instance.SetState(manager_ui.UIState.INGAME_SETTINGS);
+            //    break;
+            //case ActionType.TRIGGER_MENUQUIT:
+            //    //game_master.Instance.SetState(game_master.GameState.INGAME_MENU);
+            //    manager_ui.Instance.SetState(manager_ui.UIState.INGAME_QUIT);
+            //    break;
+        }
+    }
+
+    #region Properties
+
+    // unit square
+    public float MovementV
+    {
+        get { return Mathf.Clamp(game_variables.Instance.MovementV * input_touch.Instance.MovePointer.y / game_variables.Instance.SensitivityMovement, -1, 1); }
+    }
+
+    // unit square
+    public float MovementH
+    {
+        get { return Mathf.Clamp(game_variables.Instance.MovementH * input_touch.Instance.MovePointer.x / game_variables.Instance.SensitivityMovement, -1, 1); }
+    }
+
+    public bool isMove
+    {
+        get { return input_touch.Instance.IsMove; }
+    }
+
+    public Vector2 MovePointer
+    {
+        get { return input_touch.Instance.MovePointer; }
+    }
+
+    public bool IsFreeCamera
+    {
+        get { return input_touch.Instance.IsFreeCam; }
+    }
+
+    // unit square
+    public float CameraV
+    {
+        get { return game_variables.Instance.CameraV * input_touch.Instance.CameraPointer.y / game_variables.Instance.SensitivityFreeCam; }
+    }
+
+    // unit square
+    public float CameraH
+    {
+        get { return game_variables.Instance.CameraH * input_touch.Instance.CameraPointer.x / game_variables.Instance.SensitivityFreeCam; }
+    }
+
+    //public bool IsSprint
+    //{
+    //    get { return Mathf.Abs(MovementV) > game_variables.Instance.SprintRatio; }
+    //}
+
+    //public float SprintAmount
+    //{
+    //    get { if (IsSprint) return (MovementV - _sprintRatio) / (1 - _sprintRatio); else return 0; }
+    //}
+
+    #endregion
+}

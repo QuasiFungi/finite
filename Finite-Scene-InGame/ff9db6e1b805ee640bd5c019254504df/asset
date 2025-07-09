@@ -1,0 +1,44 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class display_message : MonoBehaviour
+{
+    public static display_message Instance;
+    public TMP_Text _displayMessage;
+
+    private float _displayTime;
+    private float _displayTimer;
+
+    void Awake()
+    {
+        Instance = this;
+
+        _displayMessage.text = "";
+    }
+
+    void OnEnable()
+    {
+        _displayTime = game_variables.Instance.DurationDisplayMessage;
+        _displayTimer = _displayTime;
+        //gameObject.SetActive(false);
+    }
+
+    void Update()
+    {
+        if (_displayTimer > 0)
+        {
+            _displayTimer -= Time.deltaTime;
+            if (_displayTimer <= 0)
+                gameObject.SetActive(false);
+        }
+    }
+
+    public void SetMessage(string message)
+    {
+        _displayMessage.text = message;
+        _displayTimer = _displayTime;
+    }
+}

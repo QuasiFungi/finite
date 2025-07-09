@@ -1,0 +1,65 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class item_equip : MonoBehaviour
+{
+    public static item_equip Instance;
+
+    private List<GameObject> _models;
+
+    void Awake()
+    {
+        Instance = this;
+        // get all anchor children ?
+        _models = new List<GameObject>();
+        int count = transform.childCount;
+        for(int i = 0; i < count; i++)
+            _models.Add(transform.GetChild(i).gameObject);
+    }
+
+    // void Update()
+    // {
+    //     // not viewing item
+    //     if (!manager_ui.Instance.IsItemView)
+    //     {
+    //         // follow camera
+    //         transform.LookAt(player_camera.Instance.Position);
+    //         // clear buffer
+    //         _viewRotationX = 0;
+    //         _viewRotationY = 0;
+    //     }
+    //     // any axis rotation not applied
+    //     else if (_viewRotationX != item_view.Instance.ViewRotationX || _viewRotationY != item_view.Instance.ViewRotationY)
+    //     {
+    //         // inactive
+    //         if (!item_view.Instance.IsActive)
+    //         {
+    //             // clear buffer
+    //             _viewRotationX = 0;
+    //             _viewRotationY = 0;
+    //         }
+    //         else
+    //         {
+    //             // apply rotation difference
+    //             transform.RotateAround(transform.position, player_camera.Instance.Right, _viewRotationX - item_view.Instance.ViewRotationX);
+    //             transform.RotateAround(transform.position, player_camera.Instance.Up, _viewRotationY - item_view.Instance.ViewRotationY);
+    //             // store updated rotation
+    //             _viewRotationX = item_view.Instance.ViewRotationX;
+    //             _viewRotationY = item_view.Instance.ViewRotationY;
+    //         }
+    //     }
+    // }
+
+    public void ClearModels()
+    {
+        foreach (GameObject item in _models)
+            // safety ?
+            if(item != null)
+                item.SetActive(false);
+        // foreach (Transform model in _anchor)
+        //     // safety ?
+        //     if(model != null)
+        //         model.gameObject.SetActive(false);
+    }
+}

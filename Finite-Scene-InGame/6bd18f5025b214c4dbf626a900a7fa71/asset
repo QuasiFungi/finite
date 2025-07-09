@@ -1,0 +1,19 @@
+using UnityEngine;
+using Panda;
+
+public class entity_wanderer : entity_ai
+{
+    [Task]
+    public void TargetIsPlayer()
+    {
+        if (_target == null)
+            // 
+            Task.current.Fail();
+        else if (_target.gameObject.layer == game_variables.Instance.LayerClimbPlayer)
+            // gotem
+            Task.current.Succeed();
+        else
+            // 
+            Task.current.Fail();
+    }
+}

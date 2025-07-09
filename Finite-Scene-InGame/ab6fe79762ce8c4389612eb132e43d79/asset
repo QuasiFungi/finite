@@ -1,0 +1,45 @@
+﻿using UnityEngine;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
+public static class system_game
+{
+    private const string _saveFile = "player.dat";
+    public static void StateSave()
+    {
+        string path = Path.Combine(Application.persistentDataPath, _saveFile);
+        BinaryFormatter formatter = new BinaryFormatter();
+        FileStream stream = new FileStream(path, FileMode.Create);
+        game_state data = new game_state();
+        formatter.Serialize(stream, data);
+        stream.Close();
+    }
+    public static bool ExistSave()
+    {
+        return File.Exists(Path.Combine(Application.persistentDataPath, _saveFile));
+    }
+    public static bool StateLoad()
+    {
+        string path = Path.Combine(Application.persistentDataPath, _saveFile);
+        if (File.Exists(path))
+        {
+            BinaryFormatter formatter = new BinaryFormatter();
+            using (FileStream stream = new FileStream(path, FileMode.Open))
+            {
+                game_state data = (game_state)formatter.Deserialize(stream);
+                StateApply(data);
+                stream.Close();
+                return true;
+            }
+        }
+        return false;
+    }
+    private static void StateApply(game_state data)
+    {
+        // Player
+        player_motor.Instance.SetData(data._position, data._rotation, data._rotationCenter);
+        // Entity
+        // Item
+        // Basic
+        // Advanced
+    }
+}

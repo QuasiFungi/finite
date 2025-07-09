@@ -1,0 +1,48 @@
+using UnityEngine;
+using Panda;
+
+public class entity_tentacle : entity_ai
+{
+    public float _grownTimer;
+
+    [Task]
+    public bool IsGrown;
+    
+    [Task]
+    public bool IsSprout;
+
+    [Task]
+    public void HealthTickDown(float rate)
+    {
+        if (_healthInst > 0)
+            _healthInst -= Time.deltaTime * rate;
+        // 
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void GrownTickUp(float rate)
+    {
+        if (_grownTimer > 0)
+            _grownTimer -= Time.deltaTime * rate;
+        else
+            IsGrown = true;
+        // 
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void SetSprout()
+    {
+        IsSprout = true;
+        // 
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void SelfDestruct()
+    {
+        // 
+        Destroy(gameObject);
+    }
+}

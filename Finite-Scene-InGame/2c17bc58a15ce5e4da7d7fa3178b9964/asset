@@ -1,0 +1,516 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class base_player : MonoBehaviour
+{
+    public static base_player Instance;
+    public GameObject _diaryModel;
+
+    private float _health;
+    private float _healthInst;
+    private float _stamina;
+    private float _staminaInst;
+    private float _regenerationRateHealth;
+    private float _regenerationRateStamina;
+    private float _regenerationRateStaminaMoving;
+
+    private float _drainRateStamina;                //stamina drain rate while sprinting 
+    // private float _damageFall;                      //maximum damage from a vertical fall 
+
+    private float _timePauseRegenerationHealth;
+    private float _timerPauseRegenerationHealth;
+    // private float _timePauseRegenerationStamina;
+    // private float _timerPauseRegenerationStamina;
+    private bool _canSprint;
+    
+    private List<base_item> _inventory;
+    // not sub class ?
+    public class DiaryEntry
+    {
+        public DiaryEntry()
+        {
+            // image, label, note
+        }
+    }
+    private List<DiaryEntry> _diary;
+    // private List<base_item> _itembag;
+    private base_item _itemEquipped;
+
+    // private int _rngID_itembag;                     // ??? updated on item add/remove 
+    // private int _rngID_diary;                       // ??? updated on entry add/remove 
+
+    void Awake()
+    {
+        Instance = this;
+
+        // Initialize Constants 
+        _health = 10;
+        _stamina = 7;
+        _regenerationRateHealth = 0.5f;
+        _regenerationRateStamina = 1f;
+        _regenerationRateStaminaMoving = 0.1f;      //...???
+        _drainRateStamina = 1f;
+        _timePauseRegenerationHealth = 7;
+        // _timePauseRegenerationStamina = 7;
+        _canSprint = true;
+        // _damageFall = 10;
+
+        // Initialize Variables 
+        //_healthInst = _health;
+        //_staminaInst = _stamina;
+        //_timerPauseRegenerationHealth = -1;
+        //_timerPauseRegenerationStamina = 0;
+        ResetAll();
+
+        // ??? 
+        _inventory = new List<base_item>();
+        // _diary = new List<base_item>();
+        _diary = new List<DiaryEntry>();
+        // _itembag = new List<base_item>();
+        _itemEquipped = null;
+
+        //_rngID_itembag = Random.Range(int.MinValue, int.MaxValue);
+        //_rngID_diary = Random.Range(int.MinValue, int.MaxValue);
+        // _rngID_itembag = int.MaxValue;
+        // _rngID_diary = int.MaxValue;
+    }
+
+    // ??? 
+    //void Start()
+    //{
+    //    _inventory = new List<base_item>();
+    //    _diary = new List<base_item>();
+    //    _itembag = new List<base_item>();
+    //    _itemEquipped = null;
+    //}
+
+    void Update()
+    {
+        // Debug.Log(input_touch.Instance.MoveRate);
+
+        // Health
+        if (manager_ui.Instance.IsAlive)
+        {
+            // if regen timer active, tick 
+            if (_timerPauseRegenerationHealth > 0)
+                _timerPauseRegenerationHealth -= Time.deltaTime;
+            // else if low 
+            else if (_healthInst < _health)
+                _healthInst += _regenerationRateHealth * Time.deltaTime;
+            // no free cam
+            if (!game_variables.Instance.FreeCamera)
+            {
+                // enable collider ?
+                player_motor.Instance.ToggleColliders(true);
+            }
+        }
+        // // dead, no free cam ?
+        // else if (!game_variables.Instance.FreeCamera)
+        // dead
+        else
+        {
+            // disable collider ?
+            player_motor.Instance.ToggleColliders(false);
+        }
+        
+        // Stamina
+        // // if regen timer active, tick and regen 
+        // if (_timerPauseRegenerationStamina > 0)
+        // {
+        //     _timerPauseRegenerationStamina -= Time.deltaTime;
+        //     if (_staminaInst < _stamina)
+        //         // slow regen based on move rate 
+        //         _staminaInst += Mathf.Lerp(_regenerationRateStamina, _regenerationRateStaminaMoving, input_touch.Instance.MoveRate) * Time.deltaTime;
+        // }
+        // // else if sprinting, moving and can, drain 
+        // else if (player_motor.Instance.SprintAmount > 0 && player_motor.Instance.Cached_AbsoluteHorizontalVelocity > 0 && _timerPauseRegenerationStamina <= 0)
+        // // else if (player_motor.Instance.SprintAmount > 0 && _timerPauseRegenerationStamina <= 0)
+        // {
+        //     _staminaInst -= _drainRateStamina * player_motor.Instance.SprintAmount * player_motor.Instance.Cached_AbsoluteHorizontalVelocity * Time.deltaTime;
+        //     // _staminaInst -= _drainRateStamina * player_motor.Instance.SprintAmount * Time.deltaTime;
+        //     if (_staminaInst <= 0)
+        //         //reset timer 
+        //         _timerPauseRegenerationStamina = _timePauseRegenerationStamina;
+        // }
+        // // else regen 
+        // else if (_staminaInst < _stamina)
+        //     // slow regen based on move rate 
+        //     _staminaInst += Mathf.Lerp(_regenerationRateStamina, _regenerationRateStaminaMoving, input_touch.Instance.MoveRate) * Time.deltaTime;
+        // // cap stamina 
+        // if (_staminaInst > _stamina)
+        //     _staminaInst = _stamina;
+        // if (player_motor.Instance.SprintAmount > 0 && player_motor.Instance.Cached_AbsoluteHorizontalVelocity > 0)
+        // if (input_touch.Instance.MoveRate > game_variables.Instance.SprintRatio && player_motor.Instance.Cached_AbsoluteHorizontalVelocity > 0)
+        // Debug.Log(_canSprint + "\t" + _staminaInst);
+        // if (input_controller.Instance.isMove && player_motor.Instance.Cached_AbsoluteHorizontalVelocity > game_variables.Instance.SprintRatio)
+        
+        // // moving
+        // if (input_controller.Instance.isMove)
+        // {
+        //     // sprinting
+        //     if (player_motor.Instance.Cached_AbsoluteHorizontalVelocity > game_variables.Instance.SprintRatio)
+        //     {
+        //         // drain
+        //         if (_staminaInst > 0)
+        //             _staminaInst -= _drainRateStamina * player_motor.Instance.Cached_AbsoluteHorizontalVelocity * Time.deltaTime;
+        //         // disable sprint
+        //         else
+        //             _canSprint = false;
+        //     }
+        //     // moving
+        //     else
+        //     {
+        //         // Debug.Log(player_motor.Instance.Cached_AbsoluteHorizontalVelocity);
+        //         // recover slowly [scale to move speed]
+        //         // _staminaInst += Mathf.Lerp(_regenerationRateStamina, _regenerationRateStaminaMoving, player_motor.Instance.MoveRatio) * Time.deltaTime;
+        //         _staminaInst += _regenerationRateStaminaMoving * Time.deltaTime;
+        //         // enable sprint
+        //         if (_staminaInst >= _stamina)
+        //             _canSprint = true;
+        //     }
+        // }
+        // // idle
+        // else if (_staminaInst < _stamina)
+        // {
+        //     // recover
+        //     _staminaInst += _regenerationRateStamina * Time.deltaTime;
+        //     // enable sprint
+        //     if (_staminaInst >= _stamina)
+        //         _canSprint = true;
+        // }
+
+        // 
+        // // sprinting
+        // if (player_motor.Instance.Cached_AbsoluteHorizontalVelocity > game_variables.Instance.SprintRatio)
+        // {
+        //     // 
+        //     if (_canSprint)
+        //         // drain
+        //         _staminaInst -= _drainRateStamina * player_motor.Instance.Cached_AbsoluteHorizontalVelocity * Time.deltaTime;
+        //     if (_staminaInst <= 0)
+        //         _canSprint = false;
+        // }
+        // // walking
+        // else if (_staminaInst < _stamina)
+        // {
+        //     // recover
+        //     _staminaInst += _regenerationRateStamina * Time.deltaTime;
+        //     // enable sprint
+        //     if (_staminaInst >= _stamina * 0.1f)
+        //         _canSprint = true;
+        // }
+
+        // v0.1 - input based
+        // get controller drag amount same as motor
+        // magnitude for sprint check
+        // drain if can sprint
+        // else scale restore to drag amount inverted
+        // moved ?
+        if (player_motor.Instance.IsHorizontalDisplacement)
+        {
+            Vector2 temp = new Vector2(input_controller.Instance.MovementH, input_controller.Instance.MovementV);
+            // normalize ? unit circle from square
+            temp = temp.magnitude > 1 ? temp.normalized : temp;
+            // we trying goin fast, can
+            if (temp.magnitude > game_variables.Instance.SprintRatio && _canSprint)
+            {
+                _staminaInst -= _drainRateStamina * temp.magnitude * Time.deltaTime;
+                if (_staminaInst <= 0)
+                    _canSprint = false;
+            }
+            else if (_staminaInst < _stamina)
+                // recover scale inverted
+                _staminaInst += _regenerationRateStamina * (1 - temp.magnitude) * Time.deltaTime;
+        }
+        else if (_staminaInst < _stamina)
+            // recover
+            _staminaInst += _regenerationRateStamina * Time.deltaTime;
+        // enable sprint
+        if (_staminaInst >= _stamina * 0.1f)
+                _canSprint = true;
+    }
+
+    // Called by game master on (?valid) continue ? 
+    public void ResetAll()
+    {
+        _healthInst = _health;
+        _staminaInst = _stamina;
+        _timerPauseRegenerationHealth = -1;
+        // _timerPauseRegenerationStamina = 0;
+    }
+
+    // called on damage event 
+    public void DrainHealth(float health)
+    {
+        _healthInst -= health;
+        _timerPauseRegenerationHealth = _timePauseRegenerationHealth;
+        // // buzz
+        // Handheld.Vibrate();
+        // Debug.Log("hit");
+        
+        // register one ded boi 
+        if (_healthInst <= 0)
+        {
+            manager_ui.Instance.SetState(manager_ui.UIState.INGAME_DEAD);
+            game_master.Instance.Deduct_GameLife();
+        }
+    }
+
+    // called on damage event ?
+    public void DrainStamina(float stamina)
+    {
+        _staminaInst -= stamina;
+        // _timerPauseRegenerationHealth = _timePauseRegenerationHealth;
+        // buzz
+        // Handheld.Vibrate();
+        // Debug.Log("hit");
+        
+        if (_staminaInst <= 0)
+            _staminaInst = 0;
+        // // register one ded boi 
+        // if (_healthInst <= 0)
+        // {
+        //     manager_ui.Instance.SetState(manager_ui.UIState.INGAME_DEAD);
+        //     game_master.Instance.Deduct_GameLife();
+        // }
+    }
+
+    // // Called on player ground collider trigger 
+    // public void DrainHealth_Fall()
+    // {
+    //     // no damage on short fall ? 
+    //     if (player_motor.Instance.Cached_AbsoluteVerticalVelocity > 0.5f)
+    //     {
+    //         _healthInst -= _damageFall * player_motor.Instance.Cached_AbsoluteVerticalVelocity;
+    //         _timerPauseRegenerationHealth = _timePauseRegenerationHealth;
+    //         // buzz
+    //         // Handheld.Vibrate();
+    //         // Debug.Log("fall");
+    //     }
+    //     player_motor.Instance.ClearCache_AbsoluteVerticalVelocity();
+    //     // register one ded boi 
+    //     if (_healthInst <= 0)
+    //     {
+    //         manager_ui.Instance.SetState(manager_ui.UIState.INGAME_DEAD);
+    //         game_master.Instance.Deduct_GameLife();
+    //     }
+    // }
+
+    // // ??? 
+    // // Called by manager ui on diary button press 
+    // public void Toggle_ViewDiary()
+    // {
+    //     if (_diaryModel.activeSelf)
+    //         _diaryModel.SetActive(false);
+    //     else
+    //         _diaryModel.SetActive(true);
+    // }
+
+    #region Inventory Control
+
+    // Called on item interact 
+    public void Trigger_ItemAdd(base_item item)
+    {
+        // Add item to inventory 
+        _inventory.Add(item);
+
+        // // Update itembag 
+        // UpdateItembagItems();
+        // // Update diary 
+        // UpdateDiaryItems();
+    }
+
+    // Called on item interact and combine ? 
+    public void Trigger_ItemRemove()
+    {
+        // Debug.Log("remove");
+        // item equipped and NOT master
+        if (_itemEquipped != null && _itemEquipped.Slug != "key_master")
+        {
+            // Remove equipped item from inventory 
+            _inventory.Remove(_itemEquipped);
+            // remove equipped item reference 
+            _itemEquipped = null;
+            // // Update itembag 
+            // UpdateItembagItems();
+            // // Update diary 
+            // UpdateDiaryItems();
+            // ehhhhhh ???
+            item_equip.Instance.ClearModels();
+            // if (item._equipModel != null)
+            //     item._equipModel.SetActive(true);
+        }
+    }
+
+    // Called on itembag item select ? 
+    public void Trigger_ItemEquip(base_item item)
+    {
+        // Debug.Log("equip");
+        if (_inventory.Contains(item))
+        {
+            _itemEquipped = item;
+            // ehhhhhh ???
+            item_equip.Instance.ClearModels();
+            if (item._equipModel != null)
+                item._equipModel.SetActive(true);
+        }
+    }
+
+    // // ??? Load Pickup type items into list 
+    // private void UpdateItembagItems()
+    // {
+    //     int count = _itembag.Count;
+    //     _itembag.Clear();
+    //     foreach (base_item item in _inventory)
+    //         if (item._itemType == base_item.ItemType.PICKUP)
+    //             _itembag.Add(item);
+    //     // ? if item added/removed 
+    //     if (_itembag.Count != count)
+    //         // Generate new rng id 
+    //         _rngID_itembag = Random.Range(int.MinValue, int.MaxValue);
+    // }
+
+    // // ??? Load Diary type items into list 
+    // private void UpdateDiaryItems()
+    // {
+    //     int count = _diary.Count;
+    //     _diary.Clear();
+    //     foreach (base_item item in _inventory)
+    //         if (item._itemType == base_item.ItemType.DIARY)
+    //             _diary.Add(item);
+    //     // ? if entry added/removed 
+    //     if (_diary.Count != count)
+    //         // Generate new rng id 
+    //         _rngID_diary = Random.Range(int.MinValue, int.MaxValue);
+    // }
+
+    // // Called by game state on state apply 
+    // public void SetInventory(List<base_item> inventory)
+    // {
+    //     _inventory = inventory;
+    //     UpdateDiaryItems();
+    //     UpdateItembagItems();
+    // }
+
+    // // Called by game state on state apply 
+    // public void SetItemEquipped(base_item item)
+    // {
+    //     _itemEquipped = item;
+    //     // Debug.Log("Equipped:\t" + item.Slug);
+    // }
+
+    // Called by item bag on close ? 
+    public void Trigger_ItemUnequip()
+    {
+        // Debug.Log("unequip");
+        // Debug.Log("Unequipped:\t" + _itemEquipped.Slug);
+        _itemEquipped = null;
+        // ehhhhhh ???
+        item_equip.Instance.ClearModels();
+    }
+
+    // ??? 
+    // Called by item objects to check if already equipped 
+    public bool HasInventoryItem(base_item item)
+    {
+        return _inventory.Contains(item);
+    }
+
+    // used by itembag slots to set active state 
+    public bool IsEquippedItem(base_item item)
+    {
+        if (_itemEquipped != null)
+            return _itemEquipped.Equals(item);
+        return false;
+    }
+
+    // // ??? needed ? too specific ?
+    // public bool IsEquippedFlowerBloom()
+    // {
+    //     return _itemEquipped != null && _itemEquipped.Slug == "flower" && itemPickup_flower.Instance.IsBloom;
+    // }
+
+    // // ??? needed ? too specific ?
+    // public bool IsEquippedFlowerShroom()
+    // {
+    //     return _itemEquipped != null && _itemEquipped.Slug == "flower" && itemPickup_flower.Instance.IsShroom;
+    // }
+
+    // // ??? needed ? too specific ?
+    // public bool IsEquippedLanternSuper()
+    // {
+    //     return _itemEquipped != null && _itemEquipped.Slug == "lantern" && item_lantern.Instance.Fuel > 0 && item_lantern.Instance.IsSuper;
+    // }
+
+    #endregion
+
+    #region Properties
+
+    public bool IsAlive
+    {
+        get { return _healthInst > 0; }
+    }
+
+    public bool CanSprint
+    {
+        // get { return _timerPauseRegenerationStamina <= 0; }
+        get { return _canSprint; }
+    }
+
+    public float Health
+    {
+        get { return _healthInst / _health; }
+    }
+
+    // ??? [Range(1, 0)]
+    public float Stamina
+    {
+        // get { return 1 - (_timerPauseRegenerationStamina / _timePauseRegenerationStamina); }
+        get { return _staminaInst / _stamina; }
+    }
+
+    // true when viewing diary [to trigger item view close] 
+    public bool isViewDiaryModel
+    {
+        get { return _diaryModel.activeSelf; }
+    }
+
+    // used by diary model to display entries 
+    public List<DiaryEntry> Diary
+    {
+        get { return _diary; }
+    }
+
+    // // used by item bag to display items 
+    // public List<base_item> ItemBag
+    // {
+    //     get { return _itembag; }
+    // }
+
+    // used by game state to record inventory state on state update 
+    public List<base_item> Inventory
+    {
+        get { return _inventory; }
+    }
+
+    // used by game state to record item equipped state on state update 
+    public base_item ItemEquipped
+    {
+        get { return _itemEquipped; }
+    }
+
+    // // used by item bag to update entries 
+    // public int RngID_Itembag
+    // {
+    //     get { return _rngID_itembag; }
+    // }
+
+    // used by diary to update entries 
+    // public int RngID_Diary
+    // {
+    //     get { return _rngID_diary; }
+    // }
+
+    #endregion
+}

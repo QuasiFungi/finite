@@ -1,0 +1,12 @@
+using UnityEngine;
+
+public class itemModel_bookItemView : base_item
+{
+    public override void Trigger_Model()
+    {
+        // base player diary item view ?
+        // trigger dialogue menu ?
+        manager_ui.Instance.Trigger_DisplayMessage();
+        display_message.Instance.SetMessage("todo:itemModel_bookItemView");
+    }
+}

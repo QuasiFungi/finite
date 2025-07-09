@@ -1,0 +1,11 @@
+using UnityEngine;
+using UnityEngine.UI;
+
+public class statusStamina : MonoBehaviour
+{
+    public Image fill;
+    void Update()
+    {
+        fill.fillAmount = base_player.Instance.Stamina;
+    }
+}

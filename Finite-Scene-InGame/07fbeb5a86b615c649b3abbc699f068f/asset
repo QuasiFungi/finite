@@ -1,0 +1,68 @@
+using UnityEngine;
+
+// ??? dispenser only
+public class itemInteractive_oilDispenser : base_item
+{
+    private Animator _anim;
+    private float _fuelInst;    //initial capacity
+    private float _fuel;        //max capacity
+    public override void Initialize()
+    {
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        // ten/fifteen minutes ?
+        _fuel = 15f * 60f;
+        _fuelInst = _fuel;
+    }
+
+    public override void Trigger_Interaction()
+    {
+        // has fuel
+        if (_fuel > 0)
+        {
+            // try item
+            if (base_player.Instance.ItemEquipped != null)
+            {
+                // lantern/master key
+                if (base_player.Instance.ItemEquipped.Slug == "lantern" || base_player.Instance.ItemEquipped.Slug == "key_master")
+                {
+                    // refill lantern, drain
+                    _fuel -= item_lantern.Instance.Refill(_fuel);
+                    // trigger dialogue menu
+                    manager_ui.Instance.Trigger_DisplayMessage();
+                    if (_fuel <= 0)
+                        display_message.Instance.SetMessage("It's empty now");
+                    else
+                        display_message.Instance.SetMessage("The lantern's oil has been refilled");
+                    _anim.SetTrigger("Turn");
+                }
+                // some left
+                else
+                {
+                    // trigger dialogue menu ?
+                    manager_ui.Instance.Trigger_DisplayMessage();
+                    display_message.Instance.SetMessage("There's still some oil inside");
+                }
+            }
+            // got nothing
+            else
+            {
+                // trigger dialogue menu 
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("There's still some oil inside");
+            }
+        }
+        // nada
+        else
+        {
+            // trigger dialogue menu 
+            manager_ui.Instance.Trigger_DisplayMessage();
+            display_message.Instance.SetMessage("It seems to be empty");
+        }
+    }
+    // ???
+    public bool HasFuel
+    {
+        get { return _fuelInst > 0; }
+    }
+}

@@ -1,0 +1,51 @@
+using UnityEngine;
+
+public class itemView_book : base_item
+{
+    private Animator _anim;
+    public Animator _animModel;
+    public int _page;    // current
+    public int _pages;   // total [0 - closed, 1 + open]
+    public override void Initialize()
+    {
+        // 
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        _animModel = _viewModel.transform.GetComponent<Animator>();
+        // 
+    }
+    // page
+    public void PageTurn(int direction)
+    {
+        // - tick
+        // pad[id] = true;
+        _page += direction;
+        // overflow
+        if (_page > _pages)
+            _page = _pages - 1;
+        // underflow
+        else if (_page < 0)
+            _page = 0;
+        // - animate
+        // blend tree ?
+        _anim.SetInteger("Page", _page);
+        _animModel.SetInteger("Page", _page);
+    }
+    // cover, bookmark
+    public void PageSet(int page)
+    {
+        // valid
+        if (_page > -1 && _page < _pages)
+            _page = page;
+        // - animate
+        // blend tree ?
+        _anim.SetInteger("Page", _page);
+        _animModel.SetInteger("Page", _page);
+    }
+    // ??? trigger item view from diagram
+    // diary sketch ? personal diary only ? conditional ?
+    public void PageItemView(int page)
+    {
+        // wut do ?
+    }
+}

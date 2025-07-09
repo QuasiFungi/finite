@@ -1,0 +1,20 @@
+﻿// using System.Collections;
+// using System.Collections.Generic;
+// using UnityEngine;
+
+// public class collider_cling : MonoBehaviour
+// {
+//     public static collider_cling Instance;
+
+//     void Awake()
+//     {
+//         Instance = this;
+//     }
+
+//     void OnCollisionEnter(Collision other)
+//     {
+//         // ??? 
+//         //player_controller.Instance.AddAction(player_controller.ActionType.INTERACT/)
+//         player_controller.Instance.Trigger_Cling(Vector3.zero);
+//     }
+// }

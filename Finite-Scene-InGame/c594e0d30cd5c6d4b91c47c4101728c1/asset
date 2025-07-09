@@ -1,0 +1,18 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class item_bag : MonoBehaviour
+{
+    public static item_bag Instance;
+
+    void Awake()
+    {
+        Instance = this;
+    }
+
+    void OnEnable()
+    {
+        // add and populate slots from base player item bag 
+    }
+}

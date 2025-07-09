@@ -1,0 +1,21 @@
+using UnityEngine;
+
+public class itemDialogue_oilBarrel : base_item
+{
+    public itemInteractive_oilDispenser _dispenser;
+    public override void Trigger_Dialogue()
+    {
+        if (_dispenser != null && _dispenser.HasFuel)
+        {
+            // trigger dialogue menu 
+            manager_ui.Instance.Trigger_DisplayMessage();
+            display_message.Instance.SetMessage("There's still some oil inside");
+        }
+        else
+        {
+            // trigger dialogue menu 
+            manager_ui.Instance.Trigger_DisplayMessage();
+            display_message.Instance.SetMessage("It seems to be empty");
+        }
+    }
+}

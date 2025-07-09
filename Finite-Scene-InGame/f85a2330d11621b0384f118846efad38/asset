@@ -1,0 +1,920 @@
+using UnityEngine;
+using Panda;
+
+public class entity_ai : base_entity
+{
+    public bool _isVision;
+    public bool _isAudio;
+    public bool _isParallax;
+    public bool _isOmni;
+    public bool _isCollision;
+    public Transform _anchor;
+    private float _timerA;
+    private float _timerB;
+    private bool _tickTimerA;   // [false:tick]
+    private bool _tickTimerB;
+    // manual set to true on sensor event ?
+    public bool _isAlert;
+    public bool _isDetected;
+    // Configuration variables 
+    public float _radiusCast;                       //...radius of occlusion check spherecast 
+    public Vector2 padding;                         //...fov padding from borders ?
+
+    protected override void Update_Extra()
+    {
+        if (!_tickTimerA && _timerA > 0)
+            _timerA -= Time.deltaTime;
+        if (!_tickTimerB && _timerB > 0)
+            _timerB -= Time.deltaTime;
+    }
+
+    // * testing
+    [Task]
+    public bool IsBT
+    {
+        get { return _isBT; }
+    }
+
+    [Task]
+    // public void EnableDamage()
+    // public void DisableDamage()
+    public void TestDamageHealth(float value)
+    {
+        if (_target != null)
+        {
+            if (_target.gameObject.layer == game_variables.Instance.LayerPlayer)
+                base_player.Instance.DrainHealth(value);
+            else if (_target.gameObject.layer == game_variables.Instance.LayerEntity)
+                _target.GetComponent<base_entity>().Register_Damage(value);
+        }
+        // 
+        Task.current.Succeed();
+    }
+
+    [Task]
+    // public void EnableDamage()
+    // public void DisableDamage()
+    public void TestDamageStamina(float value)
+    {
+        if (_target != null)
+        {
+            if (_target.gameObject.layer == game_variables.Instance.LayerPlayer)
+                base_player.Instance.DrainStamina(value);
+            // else if (_target.gameObject.layer == game_variables.Instance.LayerEntity)
+            //     _target.GetComponent<base_entity>().Register_Damage(value);
+        }
+        // 
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void ReleaseWisp()
+    {
+        if (_wisp == null)
+            // 
+            Task.current.Fail();
+        // 
+        Instantiate(_wisp, transform.position, Quaternion.identity).transform.GetComponent<entity_wisp>().SetParent((base_entity)this);
+        // 
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void DisableMesh()
+    {
+        // 
+        if (_mesh != null)
+            _mesh.enabled = false;
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void DisableCollider()
+    {
+        // 
+        if (_collider != null)
+            _collider.enabled = false;
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void DisableVision()
+    {
+        _isVision = false;
+        // 
+        Task.current.Succeed();
+    }
+
+    // thing
+    [Task]
+    public void DisableParallax()
+    {
+        _isParallax = false;
+        // 
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void DisableAudio()
+    {
+        _isAudio = false;
+        // 
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void EnableMesh()
+    {
+        // 
+        if (_mesh != null)
+            _mesh.enabled = true;
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void EnableCollider()
+    {
+        // 
+        if (_collider != null)
+            _collider.enabled = true;
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void EnableVision()
+    {
+        _isVision = true;
+        // 
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void EntitySpeed(float value)
+    {
+        if(_agent != null)
+            _agent.speed = value;
+        // 
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void EntityTurn(float value)
+    {
+        // if(_agent != null)
+        //     _agent.angularSpeed = value;
+        // 
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public bool IsAlive
+    {
+        get { return _healthInst > 0; }
+    }
+
+    [Task]
+    public bool IsAware
+    {
+        get { return _isAware; }
+    }
+
+    [Task]
+    public bool IsBored
+    {
+        get { return _sensorTimer == _attentionTime; }
+    }
+
+    [Task]
+    public bool IsAlert
+    {
+        get { return _isAlert; }
+    }
+
+    [Task]
+    public bool IsFlower
+    {
+        get { return _isFlower; }
+    }
+
+    [Task]
+    public bool IsShroom
+    {
+        get { return _isShroom; }
+    }
+
+    [Task]
+    public bool IsFossil
+    {
+        get { return _isFossil; }
+    }
+
+    [Task]
+    public bool IsLanternSuper
+    {
+        get { return _isLanternSuper; }
+    }
+
+    [Task]
+    public bool IsWisp
+    {
+        get { return _isWisp == -1; }
+    }
+    
+    [Task]
+    public bool IsDetected()
+    {
+        // skip calculation ?
+        if (_isDetected)
+            return true;
+        // distance, direction, angle to entity
+        float distance = Vector3.Distance(transform.position, player_camera.Instance.Position);
+        Vector3 direction = transform.position - player_camera.Instance.Position;
+        Vector2 angle = Vector2.zero;
+        angle.x = Vector2.Angle(new Vector2(player_motor.Instance.Forward.x, player_motor.Instance.Forward.z), new Vector2(direction.x, direction.z));
+        angle.y = Vector2.Angle(new Vector2(Mathf.Sqrt(Mathf.Pow(player_camera.Instance.Forward.x, 2) + Mathf.Pow(player_camera.Instance.Forward.z, 2)), player_camera.Instance.Forward.y), new Vector2(Mathf.Sqrt(Mathf.Pow(direction.x, 2) + Mathf.Pow(direction.z, 2)), direction.y));
+        // angle.z = Vector3.Angle(player_camera.Instance.Forward, direction);
+        // in player fov [sort of ?]
+        if (distance < game_variables.Instance.CameraFar && angle.x <= game_variables.Instance.FOV - padding.x && angle.y <= player_camera.Instance.FOV_Vertical - padding.y)
+        {
+            // from camera towards entity
+            Ray ray = new Ray(player_camera.Instance.Position, direction);
+            RaycastHit hitInfo;
+            if (Physics.SphereCast(ray, _radiusCast, out hitInfo, game_variables.Instance.CameraFar, game_variables.Instance.LayerEntityScan))
+                // hit entity
+                if (hitInfo.transform.gameObject.layer == game_variables.Instance.LayerEntity)
+                    _isDetected = true;
+        }
+        return _isDetected;
+    }
+
+    [Task]
+    public void IsTimerA()
+    {
+        Task.current.debugInfo = _timerA.ToString();
+        if (_timerA > 0)
+            Task.current.Succeed();
+        else
+            Task.current.Fail();
+    }
+
+    [Task]
+    public void IsTimerB()
+    {
+        Task.current.debugInfo = _timerB.ToString();
+        if (_timerB > 0)
+            Task.current.Succeed();
+        else
+            Task.current.Fail();
+    }
+
+    // // ???
+    // [Task]
+    // public void IsAlivePlayer()
+    // {
+    //     if (base_player.Instance.IsAlive)
+    //         Task.current.Succeed();
+    //     else
+    //     {
+    //         _awareTimer = 0;
+    //         // 
+    //         Task.current.Fail();
+    //     }
+    // }
+
+    [Task]
+    public void SetDead()
+    {
+        // 
+        _healthInst = 0;
+        // 
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void SetAware()
+    {
+        // not already
+        // if (_awareTimer < _awareTime)
+        if (_awareTimer < _attentionTime)
+            // _awareTimer = _awareTime;
+            _awareTimer = _attentionTime;
+        // ???
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void SetTimerA(float time)
+    {
+        _timerA = time;
+        // ???
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void SetTimerB(float time)
+    {
+        _timerB = time;
+        // ???
+        Task.current.Succeed();
+    }
+
+    // [Task]
+    // public void SetAlert()
+    // {
+    //     _isAlert = true;
+    //     // 
+    //     Task.current.Succeed();
+    // }
+
+    [Task]
+    public void SetAbsorb()
+    {
+        // 
+        // itemPickup_flower.Instance.Absorb();
+        item_flower.Instance.AbsorbBlack();
+        // 
+        Task.current.Succeed();
+    }
+    
+    [Task]
+    public void UnsetAlert()
+    {
+        _isAlert = false;
+        // 
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void UnsetDetected()
+    {
+        _isDetected = false;
+        // 
+        Task.current.Succeed();
+    }
+
+    // [Task]
+    // public void TimerATickDown(float rate)
+    // {
+    //     // ???
+    //     if (_timerA > 0)
+    //         _timerA -= Time.deltaTime * rate;
+    //     // 
+    //     Task.current.Succeed();
+    // }
+
+    // [Task]
+    // public void TimerBTick(float rate)
+    // {
+    //     // ???
+    //     if (_timerB > 0)
+    //         _timerB += Time.deltaTime * rate;
+    //     // 
+    //     Task.current.Succeed();
+    // }
+
+    // boolean ?
+    [Task]
+    public void TickTimerA(bool value)
+    {
+        _tickTimerA = value;
+        // ???
+        Task.current.Succeed();
+    }
+
+    // boolean ?
+    [Task]
+    public void TickTimerB(bool value)
+    {
+        _tickTimerA = value;
+        // ???
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void SensorAny()
+    {
+        // check sensors [priority ?]
+        // if ((_isVision && Sensor_Vision()) || (_isAudio && Sensor_Audio()) || (_isParallax && Sensor_Parallax()) || ((_isOmni || base_player.Instance.IsEquippedFlowerShroom()) && Sensor_Omni()))
+        if ((_isVision && Sensor_Vision()) || (_isAudio && Sensor_Audio()) || (_isParallax && Sensor_Parallax()) || (_isOmni && Sensor_Omni()) || (_isCollision && Sensor_Collision()))
+        // if (base_player.Instance.IsAlive && ((_isVision && Sensor_Vision()) || (_isAudio && Sensor_Audio()) || (_isParallax && Sensor_Parallax()) || ((_isOmni || base_player.Instance.IsEquippedFlowerShroom()) && Sensor_Omni())))
+        {
+            // enable waypoints ? borked ?
+            EnableWaypoints();
+            // 
+            _isAlert = true;
+            // 
+            Task.current.Fail();
+        }
+        else
+            // searching
+            Task.current.Succeed();
+    }
+
+    [Task]
+    public void SensorVision()
+    {
+        if (Sensor_Vision())
+            // detectedSensor_Omni()
+            Task.current.Fail();
+        else
+            // searching
+            Task.current.Succeed();
+    }
+
+    [Task]
+    public void SensorAudio()
+    {
+        if (Sensor_Audio())
+            // detected
+            Task.current.Fail();
+        else
+            // searching
+            Task.current.Succeed();
+    }
+
+    [Task]
+    public void SensorParallax()
+    {
+        if (Sensor_Parallax())
+            // detected
+            Task.current.Fail();
+        else
+            // searching
+            Task.current.Succeed();
+    }
+
+    [Task]
+    public void SensorSonar()
+    {
+        if (Sensor_Sonar())
+            // detected
+            Task.current.Fail();
+        else
+            // searching
+            Task.current.Succeed();
+    }
+
+    [Task]
+    public void SensorOmni()
+    {
+        if (Sensor_Omni())
+            // detected
+            Task.current.Succeed();
+        else
+            // searching
+            Task.current.Fail();
+    }
+
+    // [Task]
+    // public void SensorCollision()
+    // {
+    //     if (Sensor_Collision())
+    //         // detected
+    //         Task.current.Succeed();
+    //     else
+    //         // searching
+    //         Task.current.Fail();
+    // }
+
+    // [Task]
+    // public void SearchForTarget()
+    // {
+    //     // !?
+    //     if (base_player.Instance.IsAlive)
+    //     {
+    //         // anemonie
+    //         foreach (Transform target in _targets)
+    //         {
+    //             // in view radius + buffer ?
+    //             if (Vector3.Distance(transform.position, target.position) < game_variables.Instance.CameraFar)
+    //             {
+    //                 // target found
+    //                 Task.current.Fail();
+    //                 // exit ?
+    //                 return;
+    //             }
+    //         }
+    //     }
+    //     // // clear audio sensor cache ?
+    //     // Clear_Audio();
+    //     // searching
+    //     Task.current.Succeed();
+    // }
+    
+    // [Task]
+    // public void EquippedIsLantern()
+    // {
+    //     if (base_player.Instance.ItemEquipped != null && base_player.Instance.ItemEquipped.Slug == "lantern")
+    //         // 
+    //         Task.current.Succeed();
+    //     else
+    //         // 
+    //         Task.current.Fail();
+    // }
+    
+    // [Task]
+    // public void EquippedIsFlower()
+    // {
+    //     if (base_player.Instance.ItemEquipped != null && base_player.Instance.ItemEquipped.Slug == "flower")
+    //         // 
+    //         Task.current.Succeed();
+    //     else
+    //         // 
+    //         Task.current.Fail();
+    // }
+    
+    // [Task]
+    // public void LanternIsSuper()
+    // {
+    //     if (base_player.Instance.IsEquippedLanternSuper())
+    //         // 
+    //         Task.current.Succeed();
+    //     else
+    //         // 
+    //         Task.current.Fail();
+    // }
+    
+    // [Task]
+    // public void FlowerIsBloom()
+    // {
+    //     if (base_player.Instance.IsEquippedFlowerBloom())
+    //         // 
+    //         Task.current.Succeed();
+    //     else
+    //         // 
+    //         Task.current.Fail();
+    // }
+    
+    [Task]
+    public void EntityToMove()
+    {
+        if (_agent == null)
+            // snap
+            transform.position = _move.position;
+        else
+            // yeet
+            _agent.SetDestination(_move.position);
+        Task.current.Succeed();
+    }
+    
+    [Task]
+    public void EntityToAnchor()
+    {
+        // snap to position
+        // _agent.SetDestination(_anchor.position);
+        transform.position = _anchor.position;
+        // yeet
+        Task.current.Succeed();
+    }
+    
+    [Task]
+    public void EntityAtMove(float distance)
+    {
+        if (Vector3.Distance(transform.position, _move.position) < distance)
+            // reached
+            Task.current.Succeed();
+        else
+            // enroute ? no fail ?
+            Task.current.Fail();
+    }
+
+    [Task]
+    public void EntityAtTarget(float distance)
+    {
+        if (_target == null)
+            // dare
+            Task.current.Fail();
+        else
+        {
+            // kochi
+            if (Vector3.Distance(transform.position, _target.position) < distance)
+            {
+                // player specific ?
+                if (_target.gameObject.layer == game_variables.Instance.LayerClimbPlayer && base_player.Instance.IsAlive)
+                    Task.current.Succeed();
+                else
+                    Task.current.Fail();
+            }
+            // nein
+            else
+                Task.current.Fail();
+        }
+    }
+
+    [Task]
+    public void EntityAtPlayer(float distance)
+    {
+        if (base_player.Instance.IsAlive)
+        {
+            // kochi
+            if (Vector3.Distance(transform.position, player_motor.Instance.Position) < distance)
+                Task.current.Succeed();
+            // nein
+            else
+                Task.current.Fail();
+        }
+        else
+            // shinda
+            Task.current.Fail();
+    }
+
+    [Task]
+    public void MoveAtWaypoint()
+    {
+        if (IsWaypoint(_move.position))
+            Task.current.Succeed();
+        else
+            Task.current.Fail();
+    }
+
+    // hunter only ?
+    [Task]
+    // public void MoveAtWaypointFilter()
+    public void MoveAtWaypointValid()
+    {
+        if (IsWaypointValid(_move.position))
+            Task.current.Succeed();
+        else
+            Task.current.Fail();
+    }
+
+    [Task]
+    public void MoveAtAnchor(float distance)
+    {
+        // kochi
+        if (Vector3.Distance(_anchor.position, _move.position) < distance)
+            Task.current.Succeed();
+        // nein ? no fail ?
+        else
+            Task.current.Fail();
+    }
+    
+    [Task]
+    public void SetMoveToWaypoint()
+    {
+        _move.position = GetWaypointRandom();
+        // _move.position = GetWaypointNearby();
+        // nyes
+        Task.current.Succeed();
+    }
+    
+    [Task]
+    public void SetMoveToWaypointNearby()
+    {
+        // _move.position = GetWaypointRandom();
+        _move.position = GetWaypointNearby();
+        // nyes
+        Task.current.Succeed();
+    }
+    
+    // [Task]
+    // public void SetMoveToWaypointDirection()
+    // {
+    //     // _move.position = GetWaypointRandom();
+    //     _move.position = GetWaypointDirection();
+    //     // nyes
+    //     Task.current.Succeed();
+    // }
+    
+    // [Task]
+    // public void SetMoveToWaypointNearby()
+    // {
+    //     // ???
+    //     // _move.position = GetWaypointNearby();
+    //     _move.position = GetWaypointRandom();
+    //     // ???
+    //     Task.current.Succeed();
+    // }
+
+    // [Task]
+    // public void SetMoveToWaypointFar()
+    // {
+    //     // ???
+    //     // _move.position = GetWaypointFar();
+    //     _move.position = GetWaypointRandom();
+    //     // 
+    //     Task.current.Succeed();
+    // }
+    
+    // [Task]
+    // public void SetMoveToPosition()
+    // {
+    //     _move.position = transform.position;
+    //     // always
+    //     Task.current.Succeed();
+    // }
+    
+    [Task]
+    public void SetMoveToVision()
+    {
+        // if (_target == null)
+        if (_positionVision == Vector3.zero)
+            // 
+            Task.current.Fail();
+        else
+        {
+            Task.current.debugInfo = _positionVision.ToString();
+            _move.position = _positionVision;
+            // clear ?
+            // _target = null;
+            _positionVision = Vector3.zero;
+            // 
+            Task.current.Succeed();
+        }
+    }
+    
+    [Task]
+    public void SetMoveToAudio()
+    {
+        if (_audioPoint == null)
+            // 
+            Task.current.Fail();
+        else
+        {
+            Task.current.debugInfo = _positionAudio.ToString();
+            _move.position = _positionAudio;
+            // clear ?
+            // _positionAudio = Vector3.zero;
+            _audioPoint = null;
+            // 
+            Task.current.Succeed();
+        }
+    }
+    
+    [Task]
+    public void SetMoveToParallax()
+    {
+        if (_positionParallax == Vector3.zero)
+            // 
+            Task.current.Fail();
+        else
+        {
+            Task.current.debugInfo = _positionParallax.ToString();
+            _move.position = _positionParallax;
+            // clear ?
+            _positionParallax = Vector3.zero;
+            // 
+            Task.current.Succeed();
+        }
+    }
+    
+    [Task]
+    public void SetMoveToSonar()
+    {
+        if (_positionSonar == Vector3.zero)
+            // 
+            Task.current.Fail();
+        else
+        {
+            Task.current.debugInfo = _positionSonar.ToString();
+            _move.position = _positionSonar;
+            // clear ?
+            _positionSonar = Vector3.zero;
+            // 
+            Task.current.Succeed();
+        }
+    }
+    
+    [Task]
+    public void SetMoveToOmni()
+    {
+        if (_target == null)
+            // broken behavior ?
+            Task.current.Fail();
+        else
+        {
+            // ???
+            _move.position = _target.position;
+            // always
+            Task.current.Succeed();
+        }
+    }
+    
+    [Task]
+    public void SetMoveToCollision()
+    {
+        if (_positionCollision == Vector3.zero)
+            // broken behavior ?
+            Task.current.Fail();
+        else
+        {
+            // ???
+            _move.position = _positionCollision;
+            // always
+            Task.current.Succeed();
+        }
+    }
+    
+    [Task]
+    public void SetMoveToAnchor()
+    {
+        // ???
+        _move.position = _anchor.position;
+        // always
+        Task.current.Succeed();
+    }
+
+    // farmer, shepard [*borked with sensor cache clear on get]
+    [Task]
+    public void SetMoveToTargetBack(float distance)
+    {
+        if (_target == null)
+            // 
+            Task.current.Fail();
+        else
+        {
+            // 
+            RaycastHit hitInfo;
+            if (Physics.Raycast(_target.position, -_target.forward, out hitInfo, distance))
+                // obstructed ?
+                _move.position = hitInfo.point;
+            else
+            {
+                // clear ?
+                // _move.position = _target.position + direction * distance;
+                // current distance, tick down in [unit time] one second ?
+                float dist = Vector3.Distance(transform.position, _target.position) - Time.deltaTime * distance;
+                // pick lesser of two
+                _move.position = _target.position - _target.forward * (dist > distance ? distance : dist);
+            }
+            // 
+            Task.current.Succeed();
+        }
+    }
+
+    [Task]
+    public void WaitTillTimerA()
+    {
+        Task.current.debugInfo = _timerA.ToString();
+        // 
+        if (_timerA <= 0)
+            Task.current.Succeed();
+    }
+
+    [Task]
+    // public void WaitTillTimerAOrNearby(float time, float distance)
+    public void WaitTillTimerAOrNearby(float distance, float time)
+    {
+        Task.current.debugInfo = _timerA.ToString();
+        // 
+        if (_timerA <= 0)
+        {
+            // 
+            Task.current.Succeed();
+            return;
+        }
+        // anemonie
+        foreach (Transform target in _targets)
+            // nearby
+            if (Vector3.Distance(transform.position, target.position) < distance)
+            {
+                // too close
+                Task.current.Succeed();
+                // a n g e r y
+                _timerB = time;
+            }
+    }
+
+    [Task]
+    public void OffsetMoveToRadius(float radius)
+    {
+        _move.position += transform.right * Random.Range(-radius, radius) + transform.forward * Random.Range(-radius, radius);
+        // ???
+        Task.current.Succeed();
+    }
+
+    // [Task]
+    // public void OffsetMoveToRange(float radiusMin, float radiusMax)
+    // {
+    //     // polar coordinates to cartesian ?
+    //     // - polar
+    //     // random angle
+    //     float angle = Random.Range(0f, 360f);
+    //     // random radius in range
+    //     float radius = Random.Range(radiusMin, radiusMax);
+    //     // - cartesian
+    //     _move.position += Vector3.right * radius * Mathf.Cos(angle) + Vector3.forward * radius * Mathf.Sin(angle);
+    //     // _move.position += transform.right * Random.Range(-radius, radius) + transform.forward * Random.Range(-radius, radius);
+    //     Task.current.debugInfo = _move.position.ToString();
+    //     // ???
+    //     Task.current.Succeed();
+    // }
+
+    // [Task]
+    // public void TestDamageHealth(float amount)
+    // {
+    //     // testing
+    //     base_player.Instance.DrainHealth(amount);
+    //     // 
+    //     Task.current.Succeed();
+    // }
+
+    // [Task]
+    // public void TestDamageStamina(float amount)
+    // {
+    //     // testing
+    //     base_player.Instance.DrainStamina(amount);
+    //     // 
+    //     Task.current.Succeed();
+    // }
+}

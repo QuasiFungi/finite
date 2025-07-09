@@ -1,0 +1,64 @@
+using UnityEngine;
+using Panda;
+
+public class entity_wisp : entity_ai
+{
+    // public ParticleSystem particle;
+    public float radius;
+    public float time;
+    private float _timer;
+
+    public base_entity _parent;
+
+    protected override void Initialize()
+    {
+        base.Initialize();
+        // 
+        _timer = 0;
+    }
+    protected override void Update_Extra()
+    {
+        base.Update_Extra();
+        // 
+        // not already absorbing
+        if (_timer > 0)
+        {
+            _timer -= Time.deltaTime;
+            // absorbed
+            if (_timer <= 0)
+            {
+                _parent.SetWisp();
+                Destroy(gameObject);
+            }
+        }
+        // player nearby
+        else if (Vector3.Distance(player_motor.Instance.Position, transform.position) < radius)
+        {
+            // equipped flower or master
+            if (base_player.Instance.ItemEquipped != null && (base_player.Instance.ItemEquipped.Slug == "flower" || base_player.Instance.ItemEquipped.Slug == "key_master"))
+            {
+                // itemPickup_flower.Instance.Absorb();
+                if (_parent == null)
+                    item_flower.Instance.AbsorbWhite();
+                else
+                    item_flower.Instance.AbsorbBlack();
+                _timer = time;
+                // trigger dialogue menu
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("entity_wisp:" + (_parent == null ? "white" : "black"));
+            }
+        }
+    }
+
+    public void SetParent(base_entity entity)
+    {
+        _parent = entity;
+    }
+
+    [Task]
+    public void Absorb()
+    {
+        // 
+        Task.current.Succeed();
+    }
+}

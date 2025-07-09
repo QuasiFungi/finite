@@ -1,0 +1,36 @@
+using UnityEngine;
+using Panda;
+
+public class entity_farmer : entity_ai
+{
+    int _isMaul;
+
+    protected override void Initialize()
+    {
+        base.Initialize();
+        // 
+        _isMaul = 0;
+    }
+
+    [Task]
+    public void IsMaul()
+    {
+        // check player ring equipped
+        // 
+        Task.current.Fail();
+    }
+
+    [Task]
+    public void TakeRing()
+    {
+        // remove player item equipped
+        // 
+        Task.current.Succeed();
+    }
+
+    // called by wanderer on each swing once downed
+    public void TickMaul()
+    {
+        _isMaul++;
+    }
+}

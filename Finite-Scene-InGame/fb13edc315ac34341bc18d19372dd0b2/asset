@@ -1,0 +1,118 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+
+public class slot_bag : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
+{
+    private Image _icon;
+    private Image _highlight;
+
+    private float _fadeTime;
+    private float _fadeTimer;
+    private float _fadeTransition;  //...[-1 - inactive, 1 - active] 
+    private Color _colorFavourite;
+    private Color _colorActive;
+    private Color _colorInactive;
+
+    private base_item _item;        //...itembag item reference ? 
+
+    private Vector2 _pointer;
+    private float _holdTime;
+    private float _holdTimer;
+
+    void Awake()
+    {
+        _icon = transform.GetComponent<Image>();
+        _highlight = transform.GetChild(0).GetComponent<Image>();
+
+        _fadeTime = 0.15f;
+        _fadeTimer = 0;
+        _fadeTransition = -1;
+        _colorFavourite = new Color(1, 1, 1, 0.5f);
+        _colorActive = new Color(1, 1, 1, 1);
+        _colorInactive = new Color(1, 1, 1, 0);
+        // ???
+        _pointer = Vector2.zero;
+        _holdTime = 0.3f;
+        _holdTimer = 0;
+    }
+
+    void Update()
+    {
+        if (_holdTimer > 0)
+        {
+            _holdTimer -= Time.deltaTime;
+            if (_holdTimer <= 0)
+            {
+                // reset
+                _pointer = Vector2.zero;
+                _holdTimer = 0;
+                // toggle favourite
+                _item.ToggleFavourite();
+            }
+        }
+        // equipped
+        if (base_player.Instance.IsEquippedItem(_item))
+        {
+            _highlight.color = Color.Lerp(_colorInactive, _colorActive, _fadeTimer / _fadeTime);
+            _fadeTransition = 1;
+        }
+        // favourite
+        else if (_item != null && _item.IsFavourite)
+        {
+            _highlight.color = Color.Lerp(_colorInactive, _colorFavourite, _fadeTimer / _fadeTime);
+            _fadeTransition = 1;
+        }
+        // neither
+        else
+        {
+            _highlight.color = Color.Lerp(_colorInactive, _colorActive, _fadeTimer / _fadeTime);
+            _fadeTransition = -1;
+        }
+        _fadeTimer += Time.deltaTime * _fadeTransition;
+        _fadeTimer = Mathf.Clamp(_fadeTimer, 0, _fadeTime);
+        // if (_fadeTimer > _fadeTime)
+        //     _fadeTimer = _fadeTime;
+        // else if (_fadeTimer < 0)
+        //     _fadeTimer = 0;
+    }
+
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        // Debug.Log("down");
+        // new press
+        if (_pointer != eventData.position)
+        {
+            _pointer = eventData.position;
+            _holdTimer = _holdTime;
+        }
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        // Debug.Log("up");
+        // same press
+        if (_pointer == eventData.position)
+        {
+            // Toggle equip state
+            if (base_player.Instance.IsEquippedItem(_item))
+                // base_player.Instance.UnequipItem();
+                base_player.Instance.Trigger_ItemUnequip();
+            else
+                // base_player.Instance.SetItemEquipped(_item);
+                base_player.Instance.Trigger_ItemEquip(_item);
+        }
+        // reset
+        _pointer = Vector2.zero;
+        _holdTimer = 0;
+    }
+
+    // Called by item bag on item bag populate/update/modify ? 
+    public void SetItem(base_item item)
+    {
+        _item = item;
+        _icon.sprite = item.SpriteSlot;
+    }
+}

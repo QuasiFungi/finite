@@ -1,0 +1,27 @@
+using UnityEngine;
+
+public class itemInteractive_switchWindmill : base_item
+{
+    private Animator _anim;
+    private bool _isOn;    // cache ?
+    public itemDialogue_junction _junction;
+    public override void Initialize()
+    {
+        // 
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        // ? save file
+        _isOn = false;
+    }
+    public override void Trigger_Interaction()
+    {
+        // flip
+        _isOn = !_isOn;
+        _anim.SetTrigger("Flip");
+        _junction.PowerSwitch(_isOn);
+        // trigger dialogue menu 
+        manager_ui.Instance.Trigger_DisplayMessage();
+        display_message.Instance.SetMessage("Its flipped " + (_isOn ? "on" : "off") + " now");
+        // 
+    }
+}

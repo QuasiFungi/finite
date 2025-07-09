@@ -1,0 +1,18 @@
+﻿// using System.Collections;
+// using System.Collections.Generic;
+// using UnityEngine;
+
+// public class collider_ground : MonoBehaviour
+// {
+//     public static collider_ground Instance;
+
+//     void Awake()
+//     {
+//         Instance = this;
+//     }
+
+//     void OnTriggerEnter(Collider other)
+//     {
+//         base_player.Instance.DrainHealth_Fall();
+//     }
+// }

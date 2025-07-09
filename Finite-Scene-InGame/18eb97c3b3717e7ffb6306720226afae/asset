@@ -1,0 +1,87 @@
+using UnityEngine;
+
+public class itemInteractive_chain : base_item
+{
+    private Animator _anim;
+    private bool _isLocked;
+    public itemInteractive_toggleLock _door;    // ???
+    public override void Initialize()
+    {
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        // save file ?
+        // _anim.SetBool("IsLocked", false);
+        _isLocked = true;
+    }
+    public override void Trigger_Interaction()
+    {
+        // locked
+        if (_isLocked)
+        {
+            // try item
+            if (base_player.Instance.ItemEquipped != null)
+            {
+                // item/master check
+                if (base_player.Instance.ItemEquipped.Slug == "pliers" || base_player.Instance.ItemEquipped.Slug == "key_master")
+                {
+                    // unlock
+                    _isLocked = false;
+                    _anim.SetTrigger("DoOpen");
+                    if (_door != null)
+                        _door.Unlock();
+                    // poof
+                    Poof();
+                }
+                // ...nope
+                if (_isLocked)
+                {
+                    // bloomin or need to see
+                    if (base_player.Instance.ItemEquipped.Slug == "flower" || base_player.Instance.ItemEquipped.Slug == "lantern")
+                    {
+                        // trigger dialogue menu
+                        manager_ui.Instance.Trigger_DisplayMessage();
+                        display_message.Instance.SetMessage("I can't force them off?");
+                    }
+                    // bad item
+                    else
+                    {
+                        // trigger dialogue menu
+                        manager_ui.Instance.Trigger_DisplayMessage();
+                        display_message.Instance.SetMessage("This thing doesn't seem to work here");
+                    }
+                }
+            }
+            // no item
+            else
+            {
+                // cant open
+                // trigger dialogue menu
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("I can't force them off?");
+            }
+        }
+        // unlocked
+        else
+        {
+            // trigger dialogue menu
+            manager_ui.Instance.Trigger_DisplayMessage();
+            display_message.Instance.SetMessage("The door is unlocked now");
+        }
+    }
+    // called by padlock on unlock
+    public void Unlock()
+    {
+        if (!_isLocked)
+            return;
+        _isLocked = false;
+        _anim.SetTrigger("DoOpen");
+        if (_door != null)
+            _door.Unlock();
+        // poof
+        Poof();
+    }
+    public bool IsLocked
+    {
+        get { return _isLocked; }
+    }
+}

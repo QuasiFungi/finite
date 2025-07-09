@@ -1,0 +1,69 @@
+using UnityEngine;
+
+public class itemInteractive_bottleOpener : base_item
+{
+    private Animator _anim;
+    public string check;    //item that unlocks
+    public bool _isUsed;
+    public Transform _anchorKey;
+    public Transform _anchorNote;
+    public GameObject _keyDoctor;
+    public GameObject _noteDoctor;
+    public override void Initialize()
+    {
+        base.Initialize();
+        // 
+        _anim = GetComponent<Animator>();
+    }
+    public override void Trigger_Interaction()
+    {
+        if (_isUsed)
+        {
+            // trigger dialogue menu 
+            manager_ui.Instance.Trigger_DisplayMessage();
+            display_message.Instance.SetMessage("stuck");
+        }
+        // got something
+        else if (base_player.Instance.ItemEquipped.Slug != null)
+        {
+            // bloomin or need to see
+            if (base_player.Instance.ItemEquipped.Slug == "flower" || base_player.Instance.ItemEquipped.Slug== "lantern")
+            {
+                // trigger dialogue menu
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("I'm a little bottle opener");
+            }
+            // bottle ?
+            else if (base_player.Instance.ItemEquipped.Slug == "bottleDoctor")
+            {
+                // bottle .
+                _isUsed = true;
+                // consume
+                base_player.Instance.Trigger_ItemRemove();
+                // gib [animation event ?]
+                if (_keyDoctor != null && _anchorKey != null)
+                    Instantiate(_keyDoctor, _anchorKey.position, _anchorKey.rotation);
+                if (_noteDoctor != null && _anchorNote != null)
+                    Instantiate(_noteDoctor, _anchorNote.position, _anchorNote.rotation);
+                // trigger dialogue menu
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("Take it");
+            }
+            // bad item
+            else
+            {
+                // trigger dialogue menu
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("This thing doesn't seem to work here");
+            }
+        }
+        // got nothing
+        else
+        {
+            // trigger dialogue menu
+            manager_ui.Instance.Trigger_DisplayMessage();
+            display_message.Instance.SetMessage("This is a bottle opener");
+        }
+    }
+    // animation event ?
+}

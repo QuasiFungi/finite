@@ -1,0 +1,57 @@
+using UnityEngine;
+
+public class itemDialogue_toggleUnary : base_item
+{
+    private Animator _anim;
+    public bool _isOn;
+    public string _dialogueOn;
+    public string _dialogueOff;
+    public override void Initialize()
+    {
+        // 
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        // // ? [save file]
+        // _isOn = false;
+    }
+    public override void Trigger_Dialogue()
+    {
+        if (_isOn)
+        {
+            // trigger dialogue menu 
+            manager_ui.Instance.Trigger_DisplayMessage();
+            // "It seems to have retracted into the floor now" - false panel
+            // "Its open and to the side now" - panel bunker
+            display_message.Instance.SetMessage(_dialogueOn);
+        }
+        else
+        {
+            // // master key check
+            // if (base_player.Instance.ItemEquipped != null && base_player.Instance.ItemEquipped.Slug == "key_master")
+            // {
+            //     _isOn = true;
+            //    _anim.SetTrigger("On");
+            // }
+            // trigger dialogue menu 
+            manager_ui.Instance.Trigger_DisplayMessage();
+            // "The floor sounds hollow over here" - false panel
+            // "This plank appears to be disconnected, but it won't budge" - panel bunker
+            display_message.Instance.SetMessage(_dialogueOff);
+        }
+    }
+    // external call [itemInteractive_switch.Cascade ?]
+    public void On()
+    {
+        // 
+        if (_isOn)
+            return;
+        _isOn = true;
+        // ??? trigger or bool ???
+        // _anim.SetTrigger("On");
+        _anim.SetBool("IsOpen", _isOn);
+    }
+    public bool IsOn
+    {
+        get { return _isOn; }
+    }
+}

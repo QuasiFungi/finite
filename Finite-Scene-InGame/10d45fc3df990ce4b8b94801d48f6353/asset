@@ -1,0 +1,56 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+
+public class button_itembag : MonoBehaviour, IPointerDownHandler
+{
+    private Image _icon;
+    private Image _highlight;
+
+    private float _fadeTime;
+    private float _fadeTimer;
+    private float _fadeTransition;  //...[-1 - inactive, 1 - active] 
+    private Color _colorActive;
+    private Color _colorInactive;
+
+    private int _rngID;
+
+    void Awake()
+    {
+        _icon = transform.GetComponent<Image>();
+        _highlight = transform.GetChild(0).GetComponent<Image>();
+
+        _fadeTime = 0.15f;
+        _fadeTimer = 0;
+        _fadeTransition = -1;
+        _colorActive = new Color(1, 1, 1, 1);
+        _colorInactive = new Color(1, 1, 1, 0);
+
+        _rngID = int.MaxValue;
+    }
+
+    void Update()
+    {
+        // // If inventory updated 
+        // if (_rngID != base_player.Instance.RngID_Itembag)
+        // {
+        //     _rngID = base_player.Instance.RngID_Itembag;
+        //     _fadeTransition = 1;
+        // }
+        _highlight.color = Color.Lerp(_colorInactive, _colorActive, _fadeTimer / _fadeTime);
+        _fadeTimer += Time.deltaTime * _fadeTransition;
+        if (_fadeTimer > _fadeTime)
+            _fadeTimer = _fadeTime;
+        else if (_fadeTimer < 0)
+            _fadeTimer = 0;
+    }
+
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        manager_ui.Instance.Trigger_Itembag();
+        // manager_ui.Instance.Trigger_Inventory();
+        _fadeTransition = -1;
+    }
+}

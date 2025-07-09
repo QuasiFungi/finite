@@ -1,0 +1,38 @@
+using UnityEngine;
+
+public class itemModel_combinationLockPad : base_item
+{
+    private Animator _anim;
+    public int id;
+    public float time;
+    private float _timer;
+    public itemView_combinationLock combinationLock;
+    public override void Initialize()
+    {
+        base.Initialize();
+        // 
+        _anim = GetComponent<Animator>();
+        // _anim.SetBool("IsOpen", _isOpen);
+        // _anim.playClip("getfromsavefile?");
+        _anim.SetBool("IsOn", false);
+    }
+    public override void Trigger_Passive()
+    {
+        if (_timer > 0)
+        {
+            _timer -= Time.deltaTime;
+            if (_timer <= 0)
+                _anim.SetBool("IsOn", false);
+        }
+    }
+    // 
+    public override void Trigger_Model()
+    {
+        // 
+        // permutationLock.Tick_Dial(id, direction);
+        // _anim.SetTrigger("Tick");
+        _anim.SetBool("IsOn", true);
+        combinationLock.Tick(id);
+        _timer = time;
+    }
+}

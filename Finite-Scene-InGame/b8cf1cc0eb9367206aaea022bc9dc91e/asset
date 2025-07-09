@@ -1,0 +1,17 @@
+using UnityEngine;
+
+public class itemInteractive_loop : base_item
+{
+    private Animator _anim;
+    public override void Initialize()
+    {
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+    }
+    public override void Trigger_Interaction()
+    {
+        // yep
+        _anim.SetTrigger("On");
+        // spam click dialogue ?
+    }
+}

@@ -1,0 +1,21 @@
+using UnityEngine;
+using Panda;
+
+public class entity_shepard : entity_ai
+{
+    [Task]
+    public void IsRing()
+    {
+        // check player ring equipped
+        // 
+        Task.current.Fail();
+    }
+
+    [Task]
+    public void TakeRing()
+    {
+        // remove player item equipped
+        // 
+        Task.current.Succeed();
+    }
+}

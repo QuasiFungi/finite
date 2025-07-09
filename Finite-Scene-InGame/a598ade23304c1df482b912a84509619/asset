@@ -1,0 +1,25 @@
+using UnityEngine;
+
+public class itemModel_permutationLockDial : base_item
+{
+    private Animator _anim;
+    public int id;
+    // public bool direction;
+    public itemView_permutationLock permutationLock;
+    public override void Initialize()
+    {
+        base.Initialize();
+        // 
+        _anim = GetComponent<Animator>();
+        // _anim.SetBool("IsOpen", _isOpen);
+        // _anim.playClip("getfromsavefile?");
+    }
+    // 
+    public override void Trigger_Model()
+    {
+        // 
+        // permutationLock.Tick_Dial(id, direction);
+        permutationLock.Tick_Dial(id);
+        _anim.SetInteger("Dial", permutationLock.Dial[id]);
+    }
+}

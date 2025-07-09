@@ -1,0 +1,24 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class menu_newgame : MonoBehaviour
+{
+    public Text _message;
+    public Text _play;
+
+    private void OnEnable()
+    {
+        if (game_master.Instance.HasSaveFile)
+        {
+            _message.text = "Warning: This will overwrite the existing Save File. All progress will be lost.";
+            _play.text = "Play?";
+        }
+        else
+        {
+            _message.text = "This game uses only one save file. Autosave duration can be modifiied in settings.";
+            _play.text = "Play";
+        }
+    }
+}

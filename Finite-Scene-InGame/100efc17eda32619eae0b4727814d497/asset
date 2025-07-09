@@ -1,0 +1,86 @@
+using System.Collections;
+using System.Collections.Generic;
+using System.Xml;
+using UnityEngine;
+
+public class game_lexicon : MonoBehaviour
+{
+    public static game_lexicon Instance;
+    private TextAsset _database;
+    private static Dictionary<string,string> _lexicon;
+
+    void Awake()
+    {
+        Instance = this;
+        _database = Resources.Load<TextAsset>("Database/Lexicon");
+        _lexicon = new Dictionary<string, string>();
+        Initialize();
+    }
+
+    private void Initialize()
+    {
+        XmlDocument xmlDocument = new XmlDocument();
+        xmlDocument.LoadXml(_database.text);
+        // XmlNodeList areaList = xmlDocument.GetElementsByTagName("area");
+
+        // foreach (XmlNode areaInfo in areaList)
+        // {
+        //     XmlNodeList areaContent = areaInfo.ChildNodes;
+        //     //this.itemInfo = new Dictionary<string, string>();
+        //     Dictionary<string, string> areaInfoD = new Dictionary<string, string>();
+        //     int num_items = 0;
+        //     foreach (XmlNode content in areaContent)
+        //     {
+        //         switch (content.Name)
+        //         {
+        //             case "type":
+        //                 areaInfoD.Add("type", content.InnerText);
+        //                 break;
+        //             case "pathCellScale":
+        //                 areaInfoD.Add("pathCellScale", content.InnerText);
+        //                 break;
+        //             case "spawnCellScale":
+        //                 areaInfoD.Add("spawnCellScale", content.InnerText);
+        //                 break;
+        //             case "dimensions":
+        //                 areaInfoD.Add("dimensions", content.InnerText);
+        //                 break;
+        //             case "offset":
+        //                 areaInfoD.Add("offset", content.InnerText);
+        //                 break;
+        //             case "start":
+        //                 areaInfoD.Add("start", content.InnerText);
+        //                 break;
+        //             case "end":
+        //                 areaInfoD.Add("end", content.InnerText);
+        //                 break;
+        //             case "components":
+        //                 areaInfoD.Add("components", content.InnerText);
+        //                 break;
+        //             case "num_items":
+        //                 // Save for use in extraction 
+        //                 areaInfoD.Add("num_items", content.InnerText);
+        //                 num_items = int.Parse(content.InnerText);
+        //                 break;
+        //             default:
+        //                 // Iterate, if there are items left to iterate for this area 
+        //                 if (num_items > 0)
+        //                 {
+        //                     areaInfoD.Add("item_position" + num_items, content.InnerText);
+        //                     num_items--;
+        //                 }
+        //                 break;
+        //         }
+        //     }
+        //     _areas.Add(new Game_Area(areaInfoD));
+        //     num_areas++;
+        // }
+    }
+
+    public string GetValue(string key)
+    {
+        string value;
+        _lexicon.TryGetValue(key, out value);
+        return value;
+    }
+}

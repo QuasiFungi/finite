@@ -1,0 +1,77 @@
+using UnityEngine;
+
+public class itemView_permutationLock : base_item
+{
+    private Animator _anim;
+    public itemDialogue_toggleUnary panel;
+    private int[] _dial;
+    private int[] _check;
+    public override void Initialize()
+    {
+        // 
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        // 
+        _dial = new int [6];
+        _dial[0] = 0;
+        _dial[1] = 0;
+        _dial[2] = 0;
+        _dial[3] = 0;
+        _dial[4] = 0;
+        _dial[5] = 0;
+        _check = new int [6];
+        _check[0] = 0;
+        _check[1] = 0;
+        _check[2] = 0;
+        _check[3] = 0;
+        _check[4] = 0;
+        _check[5] = 1;
+    }
+    public override string DebugMessage()
+    {
+        return _dial[0] + " " + _dial[1] + " " + _dial[2] + " " + _dial[3] + " " + _dial[4] + " " + _dial[5];
+    }
+    // ???
+    // public override void Trigger_Passive()
+    // {
+    //     bool clear = true;
+    //     for (int i = _check.Length - 1; i > -1; i--)
+    //         // mismatch
+    //         if (_check[i] != _dial[i])
+    //             clear = false;
+    //     if (clear)
+    //         // one way ?
+    //         panel._isOpen = true;
+    // }
+    public void Tick_Dial(int id)
+    {
+        // - animate
+        // blend tree ?
+        // _anim.SetTrigger("Tick");
+
+        // - tick
+        _dial[id]++;
+        if (_dial[id] > 9)
+            _dial[id] = 0;
+        // if (id > -1 && id < _dial.Length)
+        //     _dial[id] += direction ? 1 : -1;
+        // if (_dial[id] > 9)
+        //     _dial[id] = 0;
+        // else if (_dial[id] < 0)
+        //     _dial[id] = 9;
+        
+        // - tally
+        bool clear = true;
+        for (int i = _check.Length - 1; i > -1; i--)
+            // mismatch
+            if (_check[i] != _dial[i])
+                clear = false;
+        if (clear)
+            // one way ?
+            panel.On();
+    }
+    public int[] Dial
+    {
+        get { return _dial; }
+    }
+}

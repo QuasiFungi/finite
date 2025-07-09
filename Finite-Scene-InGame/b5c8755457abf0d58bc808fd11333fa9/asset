@@ -1,0 +1,25 @@
+using UnityEngine;
+
+public class itemModel_padLockDial : base_item
+{
+    private Animator _anim;
+    // public int id;
+    public int _direction;
+    public itemView_padLock _padLock;
+    public override void Initialize()
+    {
+        base.Initialize();
+        // 
+        _anim = GetComponent<Animator>();
+        // _anim.SetBool("IsOpen", _isOpen);
+        // _anim.playClip("getfromsavefile?");
+    }
+    // 
+    public override void Trigger_Model()
+    {
+        // 
+        // permutationLock.Tick_Dial(id, direction);
+        // _anim.SetTrigger("Tick");
+        _padLock.Tick(_direction);
+    }
+}

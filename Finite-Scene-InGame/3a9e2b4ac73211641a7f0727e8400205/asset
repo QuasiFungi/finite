@@ -1,0 +1,146 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class system_interaction : MonoBehaviour
+{
+    public static system_interaction Instance;
+
+    private List<Transform> _targets;               //...active objects in player range
+
+    // Configuration variables 
+    public float _radiusCast;                       //...radius of occlusion check spherecast 
+
+    // Target object variables 
+    private Transform target_near;                  //...closest target to player [updated when new nearest] 
+    private float target_distance;                  //...distance from player to closest target [updated every cycle] 
+    //private Vector3 target_viewPosition;            //...object position in view port 
+    private Vector3 target_direction;               //...direction from player to closest target [updated every cycle] 
+    private Vector3 target_angle;                   //...horizontal and vertical angle of closest target wrt camera forward [updated every cycle] 
+
+    private base_item target_item;                  //...copy of class closest target item 
+
+    // Misc Variables 
+    private float distance;                         //...
+    private Vector3 direction;                      //...
+    private Vector3 angle;                          //...[x - horizontal, y - vertical, z - resolved] 
+    //private Vector3 viewPosition;                   //...object position in view port 
+    
+    private Ray ray;                                //...
+    private RaycastHit hitInfo;                     //...
+
+    public Vector2 padding;                         //...fov padding from borders 
+
+    void Awake()
+    {
+        Instance = this;
+
+        _targets = new List<Transform>();
+        Reset();
+    }
+
+    void Update()
+    {
+        CheckForActiveTarget();
+    }
+
+    private void CheckForActiveTarget()
+    {
+        List<Transform> toRemove = new List<Transform>();
+        // Cycle through all registered targets 
+        foreach (Transform target in _targets)
+        {
+            // Remove target if missing or inactive 
+            if (target == null || !target.gameObject.activeSelf)
+                toRemove.Add(target);
+            else
+            {
+                // Calculate distance, direction, angle to target 
+                distance = Vector3.Distance(target.transform.position, player_camera.Instance.Position);
+                direction = target.transform.position - player_camera.Instance.Position;
+                angle.x = Vector2.Angle(new Vector2(player_motor.Instance.Forward.x, player_motor.Instance.Forward.z), new Vector2(direction.x, direction.z));
+                angle.y = Vector2.Angle(new Vector2(Mathf.Sqrt(Mathf.Pow(player_camera.Instance.Forward.x, 2) + Mathf.Pow(player_camera.Instance.Forward.z, 2)), player_camera.Instance.Forward.y), new Vector2(Mathf.Sqrt(Mathf.Pow(direction.x, 2) + Mathf.Pow(direction.z, 2)), direction.y));
+                angle.z = Vector3.Angle(player_camera.Instance.Forward, direction);
+                // If target in detect radius and in fov [sort of] 
+                if (distance < game_variables.Instance.DistanceInteract && angle.x <= game_variables.Instance.FOV - padding.x && angle.y <= player_camera.Instance.FOV_Vertical - padding.y)
+                {
+                    // Do raycast from camera position towards target 
+                    ray = new Ray(player_camera.Instance.Position, direction);
+                    hitInfo = new RaycastHit();
+                    if (Physics.SphereCast(ray, _radiusCast, out hitInfo, game_variables.Instance.DistanceInteract, game_variables.Instance.LayerItemScan))
+                    {
+                        // Check if ray hit Item 
+                        if (hitInfo.transform.gameObject.layer == game_variables.Instance.LayerItem)
+                        {
+                            // check if new target closer than current nearest [only called on new closest target] 
+                            if (distance < target_distance || angle.z < target_angle.z)
+                            {
+                                target_near = target;           //store transform of new target 
+                                target_angle = angle;           //store angle to target 
+                                target_item = target_near.GetComponent<base_item>();    //get item class 
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        foreach (Transform target in toRemove)
+            _targets.Remove(target);
+
+        // If has Target 
+        if (target_near != null)
+        {
+            // Update nearest target direction, distance, angle 
+            target_distance = Vector3.Distance(target_near.position, player_camera.Instance.Position); //estimate distance to nearest target 
+            target_direction = target_near.position - player_camera.Instance.Position;
+            target_angle.x = Vector2.Angle(new Vector2(player_motor.Instance.Forward.x, player_motor.Instance.Forward.z), new Vector2(target_direction.x, target_direction.z));
+            target_angle.y = Vector2.Angle(new Vector2(Mathf.Sqrt(Mathf.Pow(player_camera.Instance.Forward.x, 2) + Mathf.Pow(player_camera.Instance.Forward.z, 2)), player_camera.Instance.Forward.y), new Vector2(Mathf.Sqrt(Mathf.Pow(target_direction.x, 2) + Mathf.Pow(target_direction.z, 2)), target_direction.y));
+            target_angle.z = Vector3.Angle(player_camera.Instance.Forward, target_direction);
+
+            // Do raycast from camera position towards target 
+            ray = new Ray(player_camera.Instance.Position, target_direction);
+            hitInfo = new RaycastHit();
+            // If Target (still) in radius, fov and visible 
+            if (target_distance < game_variables.Instance.DistanceInteract && target_angle.x <= game_variables.Instance.FOV - padding.x && target_angle.y <= player_camera.Instance.FOV_Vertical - padding.y && Physics.SphereCast(ray, _radiusCast, out hitInfo, game_variables.Instance.DistanceInteract, game_variables.Instance.LayerItemScan))
+            {
+                // Check if ray hit Item 
+                if (hitInfo.transform.gameObject.layer == game_variables.Instance.LayerItem)
+                {
+                    // If (has target_item and) not same as current target 
+                    if (target_item != null && target_item.transform.position != target_near.position)
+                        target_item = target_near.GetComponent<base_item>();
+                    target_item.Highlight();
+                }
+            }
+            else
+                // Target outside radius 
+                Reset();
+        }
+        else
+            // No active target 
+            Reset();
+    }
+
+    // called by base_item to register self as target on Start 
+    public void RegisterTarget(Transform target)
+    {
+        _targets.Add(target);                                   //add to the targets list 
+    }
+
+    // Resets nearest target variables 
+    public void Reset()
+    {
+        target_near = null;                                     //remove nearest target 
+        target_direction = Vector3.forward;                     //reset target direction 
+        //target_viewPosition = Vector3.zero;                     //reset target view position 
+        target_distance = float.MaxValue;                       //reset target distance 
+        target_angle = Vector3.positiveInfinity;                //reset target angle 
+        target_item = null;                                     //remove target class 
+    }
+
+    // Holds item class for nearest item 
+    public base_item TargetItem
+    {
+        get { return target_item; }
+    }
+}

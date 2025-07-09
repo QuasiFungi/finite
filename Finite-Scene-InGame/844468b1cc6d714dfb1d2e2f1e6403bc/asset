@@ -1,0 +1,69 @@
+using UnityEngine;
+
+public class itemInteractive_fuseSocket : base_item
+{
+    private bool _isPower;
+    private bool _isBroken;
+    private bool _isRepaired;
+    public override void Trigger_Interaction()
+    {
+        // try item, master key
+        if (base_player.Instance.ItemEquipped != null && (base_player.Instance.ItemEquipped.Slug == "fuseSpare" || base_player.Instance.ItemEquipped.Slug == "key_master"))
+        {
+            _isRepaired = true;
+            // consume
+            base_player.Instance.Trigger_ItemRemove();
+        }
+        // 
+        else if (_isPower)
+        {
+            if (_isBroken)
+            {
+                // trigger dialogue menu 
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("The power won't flow unless a working fuse is in place");
+            }
+            else
+            {
+                // trigger dialogue menu 
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("Power seems to be flowing through");
+            }
+        }
+        else
+        {
+            if (_isBroken)
+            {
+                // trigger dialogue menu 
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("Its cracked now");
+            }
+            else
+            {
+                // trigger dialogue menu 
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("Its locked now");
+            }
+        }
+    }
+    // called by breaker on toggle/flip
+    public void Power(bool value)
+    {
+        _isPower = value;
+    }
+    // called by breaker on short circuit
+    public void Break()
+    {
+        _isBroken = true;
+    }
+    // // called by breaker on fuse spare ???
+    // public void Repair()
+    // {
+    //     _isRepaired = true;
+    // }
+    // ???
+    public bool IsRepaired
+    {
+        get { return _isRepaired; }
+    }
+}

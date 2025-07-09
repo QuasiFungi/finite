@@ -1,0 +1,96 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class menu_itembag : MonoBehaviour
+{
+    public static menu_itembag Instance;
+    private RectTransform _window;
+    public RectTransform _content;
+    public List<GameObject> _slots; //need add enough slots [take quantity and prefab ?]
+
+    private int _rngID;
+    private float _sizeSlot;
+    private float _sizeBag;
+
+    private bool _isOpen;
+
+    void Awake()
+    {
+        Instance = this;
+        _window = GetComponent<RectTransform>();
+        _rngID = int.MaxValue;
+        _sizeSlot = 70;
+        _sizeBag = 0;
+        _isOpen = false;
+    }
+
+    // ???
+    void Update()
+    {
+        // // if inventory updated 
+        // if (_rngID != base_player.Instance.RngID_Itembag)
+        // {
+        //     _rngID = base_player.Instance.RngID_Itembag;
+        // (re)populate item slots 
+        // Debug.Log(_isOpen + "\t" + base_player.Instance.ItemEquipped);
+        _sizeBag = 0;
+        for (int i = 0; i < _slots.Count; i++)
+        {
+            // item exists [in bag] 
+            // if (i < base_player.Instance.ItemBag.Count)
+            if (i < base_player.Instance.Inventory.Count)
+            {
+                // closed
+                if (!_isOpen)
+                {
+                    // favourited
+                    if (base_player.Instance.Inventory[i].IsFavourite)
+                    {
+                        // update slot info and enable 
+                        _slots[i].GetComponent<slot_bag>().SetItem(base_player.Instance.Inventory[i]);
+                        _slots[i].SetActive(true);
+                        _sizeBag += _sizeSlot;
+                    }
+                    // equipped
+                    else if (base_player.Instance.ItemEquipped != null && base_player.Instance.ItemEquipped == base_player.Instance.Inventory[i])
+                    {
+                        // update slot info and enable 
+                        _slots[i].GetComponent<slot_bag>().SetItem(base_player.Instance.Inventory[i]);
+                        _slots[i].SetActive(true);
+                        _sizeBag += _sizeSlot;
+                    }
+                    else
+                        // disable slot 
+                        _slots[i].SetActive(false);
+                    // continue;
+                }
+                else
+                {
+                    // update slot info and enable 
+                    // _slots[i].GetComponent<slot_bag>().SetItem(base_player.Instance.ItemBag[i]);
+                    _slots[i].GetComponent<slot_bag>().SetItem(base_player.Instance.Inventory[i]);
+                    _slots[i].SetActive(true);
+                    _sizeBag += _sizeSlot;
+                }
+            }
+            else
+                // disable slot 
+                _slots[i].SetActive(false);
+        }
+        // resize content component 
+        _window.sizeDelta = new Vector2(_sizeSlot, _sizeBag);
+        _content.sizeDelta = new Vector2(0, _sizeBag);
+        // }
+    }
+
+    public void SetOpen(bool value)
+    {
+        _isOpen = value;
+    }
+
+    public bool IsOpen
+    {
+        get { return _isOpen; }
+    }
+}

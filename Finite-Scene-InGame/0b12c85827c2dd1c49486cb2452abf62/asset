@@ -1,0 +1,83 @@
+using UnityEngine;
+
+public class itemInteractive_breaker : base_item
+{
+    private Animator _anim;
+    public itemView_fuseCracked _fuseCracked;
+    public itemInteractive_fuseSocket _fuseSocket;
+    public bool _isOn;          // cache ?
+    private bool _isRepaired;   // cache ?
+    private float _time;
+    private float _timer;
+    public itemDialogue_junction _junctionNE;
+    public itemDialogue_junction _junctionNW;
+    public itemDialogue_junction _junctionSE;
+    public itemDialogue_junction _junctionSW;
+    public override void Initialize()
+    {
+        // 
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        // ? save file
+        // _isOn = 
+        _isRepaired = false;
+        _time = 15;
+        _timer = 0;
+    }
+    public override void Trigger_Passive()
+    {
+        // on and ticking
+        if (_isOn && _timer > 0)
+        {
+            // surge
+            _timer -= Time.deltaTime;
+            // short circuit
+            if (_timer <= 0)
+                // borked
+                if (!_isRepaired)
+                    if (_fuseCracked != null)
+                    {
+                        _fuseCracked.Break();
+                        _fuseSocket.Break();
+                        // off
+                        _junctionNE.PowerBreaker(false);
+                        _junctionNW.PowerBreaker(false);
+                        _junctionSE.PowerBreaker(false);
+                        _junctionSW.PowerBreaker(false);
+                    }
+        }
+    }
+    public override void Trigger_Interaction()
+    {
+        // flip
+        _isOn = !_isOn;
+        _anim.SetTrigger("Flip");
+        // if (_scarecrow != null)
+        //     _scarecrow.Flip(_isOn);
+        _fuseCracked.Power(_isOn);
+        _fuseSocket.Power(_isOn);
+        _timer = (_fuseCracked.IsBroken && _isOn) ? _time : 0;
+        // trigger dialogue menu 
+        manager_ui.Instance.Trigger_DisplayMessage();
+        // repaired or fuse intact
+        if (_isRepaired || !_fuseCracked.IsBroken)
+            display_message.Instance.SetMessage("Its flipped " + (_isOn ? "on" : "off") + " now");
+        else
+            // 
+            display_message.Instance.SetMessage(_isOn ? "Power doesn't seem to be going through" : "Its flipped off now");
+        // on and repaired or intact
+        _junctionNE.PowerBreaker(_isOn && (_isRepaired || !_fuseCracked.IsBroken));
+        _junctionNW.PowerBreaker(_isOn && (_isRepaired || !_fuseCracked.IsBroken));
+        _junctionSE.PowerBreaker(_isOn && (_isRepaired || !_fuseCracked.IsBroken));
+        _junctionSW.PowerBreaker(_isOn && (_isRepaired || !_fuseCracked.IsBroken));
+    }
+    // called by fuse socket ?
+    public void Repair()
+    {
+        _isRepaired = true;
+    }
+    public bool IsFunction
+    {
+        get { return _isRepaired || _timer > 0;}
+    }
+}

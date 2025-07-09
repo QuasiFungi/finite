@@ -1,0 +1,164 @@
+using UnityEngine;
+using UnityEngine.AI;
+using Panda;
+
+public class entity_chanter : entity_ai
+{
+    // public float radiusCurse;
+    public GameObject[] hounds;
+    // private float _radiusCurse;
+    private int _spawnCount;
+    public ParticleSystem _particleTest;
+    private NavMeshPath _path;
+
+    protected override void Initialize()
+    {
+        base.Initialize();
+        // 
+        // _radiusCurse = 0;
+        _spawnCount = 1;
+        _path = new NavMeshPath();
+    }
+
+    // void OnDrawGizmos()
+    // {
+    //     if (_radiusCurse > 0)
+    //     {
+    //         // curse effect radius
+    //         Gizmos.color = new Color32(125, 0, 0, 125);
+    //         Gizmos.DrawWireSphere(transform.position, _radiusCurse);
+    //     }
+    // }
+
+    // [Task]
+    // public void SetRadiusCurse(float value)
+    // {
+    //     _radiusCurse = value;
+    //     // 
+    //     Task.current.Succeed();
+    // }
+
+    [Task]
+    public void SetMoveToTargetNearby(float radius)
+    {
+        // ???
+        if (_targets != null && _targets.Count > 0)
+            _move.position = _targets[0].position + _target.right * Random.Range(-radius, radius) + _target.forward * Random.Range(-radius, radius);
+        // always
+        Task.current.Succeed();
+    }
+
+    // [Task]
+    // public void OffsetMoveToRadialBand(float radiusMin, float radiusMax, float angleMin, float angleMax)
+    // {
+    //     // polar coordinates to cartesian ?
+    //     // - polar
+    //     // random angle
+    //     float angle = Random.Range(angleMin, angleMax);
+    //     // random radius in range
+    //     float radius = Random.Range(radiusMin, radiusMax);
+    //     // - cartesian
+    //     _move.position += Vector3.right * radius * Mathf.Cos(angle) + Vector3.forward * radius * Mathf.Sin(angle);
+    //     // _move.position += transform.right * Random.Range(-radius, radius) + transform.forward * Random.Range(-radius, radius);
+    //     Task.current.debugInfo = _move.position.ToString();
+    //     // ???
+    //     Task.current.Succeed();
+    // }
+
+    // [Task]
+    // public void OffsetMoveToRadialBand(float radiusMin, float radiusMax, float angleMin, float angleMax)
+    // {
+    //     // polar coordinates to cartesian ?
+    //     // - polar
+    //     // random angle
+    //     float angle = Random.Range(angleMin, angleMax);
+    //     // random radius in range
+    //     float radius = Random.Range(radiusMin, radiusMax);
+    //     // - cartesian
+    //     // _move.position += Vector3.right * radius * Mathf.Cos(angle) + Vector3.forward * radius * Mathf.Sin(angle);
+    //     // _move.position += _target.right * radius * Mathf.Cos(angle) + _target.forward * radius * Mathf.Sin(angle);
+    //     // _move.position += _target.forward * radius;
+    //     // _move.position += transform.right * Random.Range(-radius, radius) + transform.forward * Random.Range(-radius, radius);
+    //     _move.position += Quaternion.Euler(0, angle, 0) * _target.forward * radius;
+    //     // 
+    //     Task.current.debugInfo = _move.position.ToString();
+    //     // ???
+    //     Task.current.Succeed();
+    // }
+
+    [Task]
+    public void OffsetMoveToRadialBand(float radiusMin, float radiusMax, float angleMin, float angleMax)
+    {
+        // get position nearby ???
+        Vector3 position;
+        if (_targets != null && _targets.Count > 0)
+        {
+            // polar coordinates to cartesian ?
+            // - polar
+            // random angle
+            float angle = Random.Range(angleMin, angleMax);
+            // random radius in range
+            float radius = Random.Range(radiusMin, radiusMax);
+            // - cartesian
+            // _move.position += Vector3.right * radius * Mathf.Cos(angle) + Vector3.forward * radius * Mathf.Sin(angle);
+            // _move.position += _target.right * radius * Mathf.Cos(angle) + _target.forward * radius * Mathf.Sin(angle);
+            // _move.position += _target.forward * radius;
+            // _move.position += transform.right * Random.Range(-radius, radius) + transform.forward * Random.Range(-radius, radius);
+            position = _move.position + Quaternion.Euler(0, angle, 0) * _target.forward * radius;
+            // get valid position [if not already ?]
+            NavMesh.CalculatePath(position, _targets[0].position, NavMesh.AllAreas, _path);
+            // ???
+            for (int i = 0; i < _path.corners.Length - 1; i++)
+                Debug.DrawLine(_path.corners[i], _path.corners[i + 1], Color.green);
+            // 
+            if (_path.corners.Length > 0)
+            {
+                _move.position = _path.corners[0];
+                // always ?
+                Task.current.Succeed();
+                return;
+            }
+            else
+                // hold|override position ? try again next frame ? limit ?
+                _move.position = transform.position;
+        }
+        // 
+        Task.current.Fail();
+    }
+
+    // [Task]
+    // public void RadiusCurseTick(float rate)
+    // {
+    //     // ???
+    //     if (_radiusCurse < radiusCurse)
+    //         _radiusCurse += Time.deltaTime * rate;
+    //     // ???
+    //     var test = _particleTest.shape;
+    //     test.radius = _radiusCurse;
+    //     // 
+    //     Task.current.debugInfo = _radiusCurse.ToString();
+    //     // 
+    //     Task.current.Succeed();
+    // }
+
+    [Task]
+    public void SpawnHound(float distance)
+    {
+        // Debug.Log(_spawnCount + "\t" + _radiusCurse / radiusCurse + "\t" + (float)_spawnCount / hounds.Length);
+        if (_spawnCount <= hounds.Length)
+        {
+            // set position ???
+            RaycastHit hitInfo;
+            if (Physics.Raycast(transform.position, transform.forward, out hitInfo, distance))
+                hounds[_spawnCount - 1].transform.position = hitInfo.point;
+            else
+                hounds[_spawnCount - 1].transform.position = transform.position + transform.forward * distance;
+            // Debug.Log(hounds[_spawnCount - 1].transform.position);
+            // enable preexisting object ???
+            hounds[_spawnCount - 1].SetActive(true);
+            _spawnCount++;
+        }
+        // 
+        Task.current.Succeed();
+    }
+}

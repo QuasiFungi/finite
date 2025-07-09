@@ -1,0 +1,55 @@
+using UnityEngine;
+
+public class itemPickup_flower : base_item
+{
+    // public static itemPickup_flower Instance;
+    // private int _counterCorpse;
+    // private int _counterWisp;
+    // public override void Initialize()
+    // {
+    //     base.Initialize();
+    //     Instance = this;
+    // }
+    // // * testing *
+    // public override void Trigger_Passive()
+    // {
+    //     testLog.Instance.AddMessage("itemPickup_flower:\tcorpse:\t" + _counterCorpse + "/16");
+    //     testLog.Instance.AddMessage("itemPickup_flower:\twisp:\t" + _counterWisp + "/6");
+    // }
+    // // public override void Trigger_Pickup()
+    // // {
+    // //     // 
+    // // }
+    // // called by entity_corpse on discover
+    // public void Release()
+    // {
+    //     // 
+    //     _counterCorpse++;
+    //     // Debug.Log("itemPickup_flower:\tcorpse\t" + _counterCorpse + "/");
+    //     // // trigger dialogue menu
+    //     // manager_ui.Instance.Trigger_DisplayMessage();
+    //     // display_message.Instance.SetMessage("itemPickup_flower:\tcorpse\t" + _counterCorpse + "/16");
+    // }
+    // // called by entity_wisp on equip nearby
+    // public void Absorb()
+    // {
+    //     // 
+    //     _counterWisp++;
+    //     // Debug.Log("Flower Wisp:\twisp:\t" + _counterWisp + "/");
+    //     // // trigger dialogue menu 
+    //     // manager_ui.Instance.Trigger_DisplayMessage();
+    //     // display_message.Instance.SetMessage("itemPickup_flower:\twisp:\t" + _counterWisp + "/06");
+    // }
+
+    // // uhhh ???
+    // public bool IsBloom
+    // {
+    //     get { return false; }
+    // }
+
+    // // uhhh ???
+    // public bool IsShroom
+    // {
+    //     get { return false; }
+    // }
+}

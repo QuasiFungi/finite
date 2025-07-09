@@ -1,0 +1,74 @@
+using UnityEngine;
+
+public class itemDialogue_junction : base_item
+{
+    private Animator _anim;
+    private bool _powerSwitch;      //green
+    private bool _powerGenerator;   //yellow
+    private bool _powerBreaker;     //blue
+    public itemDialogue_scarecrow _scarecrow;
+    public override void Initialize()
+    {
+        // 
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        // ? [save file]
+        _powerSwitch = false;
+        _powerGenerator = false;
+        _powerBreaker = false;
+    }
+    public override void Trigger_Dialogue()
+    {
+        // trigger dialogue menu 
+        manager_ui.Instance.Trigger_DisplayMessage();
+        // switched on
+        if (_powerSwitch)
+        {
+            // fully powered
+            if (_powerGenerator && _powerBreaker)
+                display_message.Instance.SetMessage("All lights appear to be on");
+            // partially powered
+            else if (_powerGenerator)
+                display_message.Instance.SetMessage("The green and yellow lights are on");
+            else if (_powerBreaker)
+                display_message.Instance.SetMessage("The green and blue lights are on");
+            // no power
+            else
+                display_message.Instance.SetMessage("Only the green light is on");
+        }
+        else
+        {
+            // fully powered
+            if (_powerGenerator && _powerBreaker)
+                display_message.Instance.SetMessage("The yellow and blue lights are on");
+            // partially powered
+            else if (_powerGenerator)
+                display_message.Instance.SetMessage("The yellow light appears to be on");
+            else if (_powerBreaker)
+                display_message.Instance.SetMessage("The blue light appears to be on");
+            // no power
+            else
+                display_message.Instance.SetMessage("There are some lights on this, but they're off");
+        }
+        // at least one power source
+        if (_scarecrow != null)
+            _scarecrow.Power(_powerSwitch && (_powerGenerator || _powerBreaker));
+    }
+    // external calls [itemInteractive_switchWindmill itemInteractive_generator itemInteractive_breaker]
+    public void PowerSwitch(bool value)
+    {
+        _powerSwitch = value;
+        _anim.SetBool("Switch", value);
+    }
+    // one way ?
+    public void PowerGenerator()
+    {
+        _powerGenerator = true;
+        _anim.SetBool("Generator", true);
+    }
+    public void PowerBreaker(bool value)
+    {
+        _powerBreaker = value;
+        _anim.SetBool("Breaker", value);
+    }
+}

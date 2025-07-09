@@ -1,0 +1,133 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class manager_uiMain : MonoBehaviour
+{
+    public GameObject _background;
+    public GameObject _title;
+    public GameObject _panel;
+    public GameObject _watermark;
+    public GameObject _continue;
+    public GameObject _newgame;
+    public GameObject _settings;
+    public GameObject _about;
+    
+    public GameObject _tutorial;
+
+    void Awake()
+    {
+        _continue.SetActive(false);
+        _newgame.SetActive(false);
+        _settings.SetActive(false);
+        _about.SetActive(false);
+        _tutorial.SetActive(false);
+
+        DontDestroyOnLoad(this);
+    }
+
+    // Called by continue button 
+    public void Trigger_Continue()
+    {
+        if (game_master.Instance.HasGameLives)
+            Trigger_PlayContinue();
+        else
+        {
+            if (_continue.activeSelf)
+                _continue.SetActive(false);
+            else
+                _continue.SetActive(true);
+        }
+        _newgame.SetActive(false);
+        _settings.SetActive(false);
+        _about.SetActive(false);
+    }
+
+    // Called by new game button 
+    public void Trigger_NewGame()
+    {
+        _continue.SetActive(false);
+        if (_newgame.activeSelf)
+            _newgame.SetActive(false);
+        else
+            _newgame.SetActive(true);
+        _settings.SetActive(false);
+        _about.SetActive(false);
+    }
+
+    // Called by settings button 
+    public void Trigger_Settings()
+    {
+        _continue.SetActive(false);
+        _newgame.SetActive(false);
+        if (_settings.activeSelf)
+            _settings.SetActive(false);
+        else
+            _settings.SetActive(true);
+        _about.SetActive(false);
+    }
+
+    // Called by about button 
+    public void Trigger_About()
+    {
+        _continue.SetActive(false);
+        _newgame.SetActive(false);
+        _settings.SetActive(false);
+        if (_about.activeSelf)
+            _about.SetActive(false);
+        else
+            _about.SetActive(true);
+    }
+
+    // Called by background 
+    public void Trigger_Close()
+    {
+        _continue.SetActive(false);
+        _newgame.SetActive(false);
+        _settings.SetActive(false);
+        _about.SetActive(false);
+    }
+
+    // Called by play button 
+    public void Trigger_Play()
+    {
+        _tutorial.SetActive(true);
+        game_master.Instance.Trigger_Ingame();
+    }
+
+    // ??? 
+    // Called by continue button event 
+    private void Trigger_PlayContinue()
+    {
+        _tutorial.SetActive(true);
+        // Load game file ? 
+        game_master.Instance.Trigger_Ingame();
+    }
+
+    // Called by play ad button 
+    public void Trigger_PlayAd()
+    {
+        // Ad stuff here 
+        //_advertisement.SetActive(true);
+        //game_master.Instance.Trigger_Ingame();
+    }
+
+    // Called by tutorial on end 
+    public void HideAll()
+    {
+        _background.SetActive(false);
+        _title.SetActive(false);
+        _panel.SetActive(false);
+        _watermark.SetActive(false);
+        _continue.SetActive(false);
+        _newgame.SetActive(false);
+        _settings.SetActive(false);
+        _about.SetActive(false);
+    }
+
+    // Called by foreground on flag 
+    public void Destroy()
+    {
+        Destroy(gameObject);
+    }
+}

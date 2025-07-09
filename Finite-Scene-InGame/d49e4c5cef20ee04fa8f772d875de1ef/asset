@@ -1,0 +1,179 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class player_controller : MonoBehaviour
+{
+    public static player_controller Instance;
+    public static CharacterController CharacterController;
+
+    public enum ActionType
+    {
+        NULL, 
+        INTERACT, INTERACT_ITEMVIEW, 
+        MOVE, 
+    }
+    private ActionType action_current;
+    private ActionType action_next;
+
+    private float _queueRefreshTime;                 //...clears queue if action not executed for given time 
+    private float _queueRefreshTimer;               //...timer for clearing action queue 
+
+    //private int _idActionCurrent;                   //...rng id of current action 
+
+    void Awake()
+    {
+        Instance = this;
+        CharacterController = GetComponent<CharacterController>() as CharacterController;
+
+        // Initialize Variables
+        _queueRefreshTime = 1;
+        _queueRefreshTimer = 0;
+        //_idActionCurrent = int.MaxValue;
+    }
+
+    void Update()
+    {
+        // Set Current Action 
+        SetCurrentAction();
+
+        // Process Current Action 
+        ProcessCurrentAction();
+
+        if (action_next != ActionType.NULL)
+            if (_queueRefreshTimer > 0)
+                _queueRefreshTimer -= Time.deltaTime;
+            else if (action_next != ActionType.MOVE)
+                action_next = ActionType.NULL;
+    }
+
+    // Depends on Current Action 
+    private void SetCurrentAction()
+    {
+        switch (action_current)
+        {
+            case ActionType.NULL:
+                // Debug.Log(action_next);
+                // ??? 
+                if (action_next == ActionType.MOVE && !input_controller.Instance.isMove)
+                    action_next = ActionType.NULL;
+                action_current = action_next;
+                break;
+            case ActionType.MOVE:
+                // ??? 
+                if (!input_controller.Instance.isMove)
+                    action_current = ActionType.NULL;
+                if (action_next == ActionType.INTERACT)
+                {
+                    action_current = action_next;
+                    action_next = ActionType.NULL;
+                }
+                break;
+        }
+    }
+
+    private void ProcessCurrentAction()
+    {
+        switch (action_current)
+        {
+            case ActionType.NULL:
+                // Forward State to player_motor 
+                //player_motor.Instance.SetState(player_motor.MotorState.MOVE, _idActionCurrent);
+                player_motor.Instance.SetState(player_motor.MotorState.NULL);
+                // Debug.Log("bugged?");
+                // Forward State to player_animator ??? 
+                //player_animator.Instance.SetState(player_animator.AnimatorState.MOVE);
+                break;
+            case ActionType.MOVE:
+                // Forward State to player_motor 
+                //player_motor.Instance.SetState(player_motor.MotorState.MOVE, _idActionCurrent);
+                player_motor.Instance.SetState(player_motor.MotorState.MOVE);
+                // Debug.Log("bugged?");
+                // Forward State to player_animator ??? 
+                //player_animator.Instance.SetState(player_animator.AnimatorState.MOVE);
+                break;
+        }
+    }
+
+    // Called by input controller 
+    public void AddAction(ActionType action)
+    {
+        if (action == ActionType.INTERACT)
+        {
+            // fire ray in tap direction 
+            Ray ray = player_camera.Instance.cam_Main.ScreenPointToRay(input_touch.Instance.BufferPositionTap);
+            RaycastHit hitInfo;
+            if (Physics.Raycast(ray, out hitInfo, game_variables.Instance.DistanceInteract, game_variables.Instance.LayerItemScan))
+            {
+                // we have contact 
+                if (hitInfo.transform.gameObject.layer == game_variables.Instance.LayerItem)
+                    // fire item event 
+                    hitInfo.transform.GetComponent<base_item>().Trigger_Interact();
+            }
+        }
+        else if (action == ActionType.INTERACT_ITEMVIEW)
+        {
+            // fire ray in tap direction 
+            Ray ray = player_camera.Instance.cam_ItemView.ScreenPointToRay(item_view.Instance.BufferPositionTap);
+            RaycastHit hitInfo;
+            if (Physics.Raycast(ray, out hitInfo, game_variables.Instance.DistanceInteract, game_variables.Instance.LayerItemViewScan))
+            {
+                // we have contact 
+                if (hitInfo.transform.gameObject.layer == game_variables.Instance.LayerItemView)
+                    // fire item view model event 
+                    // hitInfo.transform.GetComponent<base_itemView>().Trigger_Interact();
+                    Debug.Log("Item View");
+                else if (hitInfo.transform.gameObject.layer == game_variables.Instance.LayerItemViewInteract)
+                    // fire item model event ?
+                    hitInfo.transform.GetComponent<base_item>().Trigger_Model();
+                    // Debug.Log("Item View Interact");
+            }
+            else
+            {
+                // we do not have contact 
+                // fire item view model close event 
+                if (manager_ui.Instance.IsInMenu)
+                    manager_ui.Instance.SetState(manager_ui.UIState.INGAME);
+                else
+                    manager_ui.Instance.Trigger_ItemView();
+                //Debug.Log("Item View Close");
+            }
+        }
+        else
+            action_next = action;
+        _queueRefreshTimer = _queueRefreshTime;
+    }
+
+    // // Called by cling collider on collsion 
+    // public void Trigger_Cling(Vector3 direction)
+    // {
+    //     // If facing cling surface ? 
+    //     action_current = ActionType.NULL;                           //exit out of current state 
+    //     //transform.rotation = Quaternion.LookRotation(direction);    //rotate to face cling surface direction 
+    //     player_motor.Instance.SetState(player_motor.MotorState.CLING);      //trigger player motor State change 
+
+    // }
+
+    // Called by input controller on move end 
+    public void StopMove()
+    {
+        if (action_current == ActionType.MOVE)
+            action_current = ActionType.NULL;
+    }
+
+    // // Called by player motor on cling end 
+    // public void StopCling()
+    // {
+    //     //player_motor.Instance.SetState(player_motor.MotorState.NULL, _idActionCurrent);
+    //     player_motor.Instance.SetState(player_motor.MotorState.NULL);
+    //     action_current = ActionType.MOVE;
+    // }
+
+    // ??? 
+    public void ResetAll()
+    {
+        // Initialize Variables 
+        _queueRefreshTimer = 0;
+        //_idActionCurrent = int.MaxValue;
+    }
+}

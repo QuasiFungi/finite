@@ -1,0 +1,476 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class game_variables : MonoBehaviour
+{
+    public static game_variables Instance;
+
+    // Basic 
+    private float _durationAutosave;
+    private float _durationDisplayMessage;
+    private float _fov;
+    private float _cameraFar;
+    private float _sensitivityMovement;
+    private float _sensitivityFreeCam;
+    private int _movementH;
+    private int _movementV;
+    private int _cameraH;
+    private int _cameraV;
+    private int _chirality;
+    private int _displayBattery;
+    private int _vibration;
+    private bool _audioAssist;
+    private int _colorblindAssist;
+    private float _environmentSounds;
+    private float _enemySounds;
+    private int _language;
+    public Color _colorItemPickup;
+    public Color _colorItemView;
+    public Color _colorItemInteractive;
+    public Color _colorItemDialogue;
+    public Color _colorItemModel;
+    
+    private int _freeCamera;
+    private float _brightness;
+
+    // Advanced 
+
+    // Hidden 
+    //private float _correctionSensitivityMovement; // scale of controller sprite in image 
+    private float _distanceInteract;
+    private float _sprintRatio;     //...speed of movement for it to be considered sprinting 
+
+    void Awake()
+    {
+        Instance = this;
+
+        // Initialize Variables 
+        Reset();
+    }
+
+    public void Reset()
+    {
+        _durationAutosave = 5;
+        _durationDisplayMessage = 7;
+        _fov = 60;
+        _cameraFar = 40;
+        // _cameraFar = 400;
+        _sensitivityMovement = 50;
+        _sensitivityFreeCam = 2.5f;
+        _movementH = 0;
+        _movementV = 0;
+        _cameraH = 0;
+        _cameraV = 0;
+        _chirality = 0;
+        _displayBattery = 0;
+        _vibration = 0;
+        _audioAssist = false;
+        _colorblindAssist = 0;
+        _environmentSounds = 100;
+        _enemySounds = 100;
+        _language = 0;  // ??? 
+        _freeCamera = 0;
+        _brightness = 1f;    // ???
+
+        //_chirality = true;
+        ////_sensitivityMovement = 75;
+        //_sensitivityMovement = 115; // half of actual image size ? 
+        //_sensitivityFreeCam = 75;
+        //_correctionSensitivityMovement = 0.9f;
+        // _distanceInteract = 3.7f;
+        _distanceInteract = 20f;
+        _sprintRatio = 2f / 3;
+        // _sprintRatio = 1;
+        
+        if (menu_settings.Instance)
+            menu_settings.Instance.Reload();
+    }
+
+    #region Setters
+
+    // ???
+    public void SetAutosave(float duration)
+    {
+        _durationAutosave = duration;
+    }
+
+    public void SetDisplayMessage(float duration)
+    {
+        _durationDisplayMessage = duration;
+    }
+
+    public void SetFOV(float fov)
+    {
+        _fov = fov;
+    }
+
+    public void SetCameraFar(float value)
+    {
+        _cameraFar = value;
+    }
+
+    public void SetSensitivityMovement(float sensitivity)
+    {
+        _sensitivityMovement = sensitivity;
+    }
+
+    public void SetSensitivityFreeCam(float sensitivity)
+    {
+        _sensitivityFreeCam = sensitivity;
+    }
+
+    public void SetMovementH(int movement)
+    {
+        _movementH = movement;
+    }
+
+    public void SetMovementV(int movement)
+    {
+        _movementV = movement;
+    }
+
+    public void SetCameraH(int camera)
+    {
+        _cameraH = camera;
+    }
+
+    public void SetCameraV(int camera)
+    {
+        _cameraV = camera ;
+    }
+
+    public void SetChirality(int chirality)
+    {
+        _chirality = chirality;
+    }
+
+    public void SetDisplayBattery(int display)
+    {
+        _displayBattery = display;
+    }
+
+    public void SetVibration(int vibration)
+    {
+        _vibration = vibration;
+    }
+
+    public void SetAudioAssist(bool audio)
+    {
+        _audioAssist = audio;
+    }
+    
+    // ??? 
+    public void SetColorblindAssist(int colorblind)
+    {
+        _colorblindAssist = 1;
+    }
+
+    public void SetEnvironmentSounds(float sound)
+    {
+        _environmentSounds = sound;
+    }
+
+    public void SetEnemySounds(float sound)
+    {
+        _enemySounds = sound;
+    }
+    
+    // ??? 
+    public void SetLanguage(int language)
+    {
+        _language = language;
+    }
+    
+    public void SetFreeCam(int value)
+    {
+        _freeCamera = value;
+        // 0 - off, 1 - on
+        player_motor.Instance.ToggleColliders(value == 0);
+    }
+
+    public void SetBrightness(float value)
+    {
+        _brightness = value;
+    }
+
+    #endregion
+
+    #region Properties [Variables]
+
+    // minutes 
+    public float DurationAutosave
+    {
+        get { return _durationAutosave; }
+    }
+
+    // seconds 
+    public float DurationAutosave_Sec
+    {
+        get { return _durationAutosave * 60; }
+    }
+
+    public float DurationDisplayMessage
+    {
+        get { return _durationDisplayMessage; }
+    }
+
+    public float FOV
+    {
+        get { return _fov; }
+    }
+
+    public float CameraFar
+    {
+        get { return _cameraFar; }
+    }
+
+    public float SensitivityMovement
+    {
+        get { return _sensitivityMovement; }
+    }
+
+    public float SensitivityFreeCam
+    {
+        get { return _sensitivityFreeCam; }
+    }
+
+    public int MovementH
+    {
+        get { if (_movementH == 0) return 1; else return -1; }
+    }
+
+    public int MovementH_Int
+    {
+        get { return _movementH; }
+    }
+
+    public int MovementV
+    {
+        get { if (_movementV == 0) return 1; else return -1; }
+    }
+
+    public int MovementV_Int
+    {
+        get { return _movementV; }
+    }
+
+    public int CameraH
+    {
+        get { return _cameraH == 0 ?  1 : -1; }
+    }
+
+    public int CameraH_Int
+    {
+        get { return _cameraH; }
+    }
+
+    public int CameraV
+    {
+        get { return _cameraV == 0 ?  1 : -1; }
+    }
+
+    public int CameraV_Int
+    {
+        get { return _cameraV; }
+    }
+
+    public bool Chirality
+    {
+        get { return _chirality == 0; }
+    }
+
+    public int Chirality_Int
+    {
+        get { return _chirality; }
+    }
+
+    public int DisplayBattery
+    {
+        get { return _displayBattery; }
+    }
+
+    public int Vibration
+    {
+        get { return _vibration; }
+    }
+
+    public bool AudioAssist
+    {
+        get { return _audioAssist; }
+    }
+
+    public int AudioAssist_Int
+    {
+        get { if (_audioAssist) return 1; else return 0 ; }
+    }
+
+    public int ColorblindAssist
+    {
+        get { return _colorblindAssist; }
+    }
+
+    public float EnvironmentSounds
+    {
+        get { return _environmentSounds; }
+    }
+
+    public float EnemySounds
+    {
+        get { return _enemySounds; }
+    }
+
+    public int Language
+    {
+        get { return _language; }
+    }
+
+    public bool FreeCamera
+    {
+        get { return _freeCamera == 1; }
+    }
+
+    public int FreeCamera_Int
+    {
+        get { return _freeCamera; }
+    }
+
+    public float DistanceInteract
+    {
+        get { return _distanceInteract; }
+    }
+
+    public float SprintRatio
+    {
+        get { return _sprintRatio; }
+    }
+
+    public Color ColorItemPickup
+    {
+        get { return _colorItemPickup; }
+    }
+
+    // ???
+    public Color ColorItemView
+    {
+        get { return _colorItemView; }
+    }
+
+    public Color ColorItemInteractive
+    {
+        get { return _colorItemInteractive; }
+    }
+
+    public Color ColorItemDialogue
+    {
+        get { return _colorItemDialogue; }
+    }
+
+    public Color ColorItemModel
+    {
+        get { return _colorItemModel; }
+    }
+
+    public float Brightness
+    {
+        get { return _brightness; }
+    }
+
+    #endregion
+
+    #region Properties [Layers]
+
+    // default layer mask
+    public LayerMask LayerEnvironment
+    {
+       get { return 0; }
+    }
+
+    public LayerMask LayerIgnore
+    {
+       get { return 2; }
+    }
+
+    // layer for water ?
+    public LayerMask LayerWater
+    {
+       get { return 4; }
+    }
+
+    // layer for items
+    public LayerMask LayerItem
+    {
+        get { return 9; }
+    }
+
+    // layer for player 
+    public int LayerPlayer
+    {
+        get { return 10; }
+    }
+    
+    // layer for item view models 
+    public LayerMask LayerItemView
+    {
+        get { return 11; }
+    }
+
+    // layer for item view model interacts 
+    public LayerMask LayerItemViewInteract
+    {
+        get { return 12; }
+    }
+
+    // layer for player climb collider/trigger
+    public int LayerClimbPlayer
+    {
+        get { return 13; }
+    }
+
+    // layer for climb surface
+    public int LayerClimbSurface
+    {
+        get { return 14; }
+    }
+
+    // layer for entity
+    public int LayerEntity
+    {
+        get { return 15; }
+    }
+
+    // layer mask for when scanning for items 
+    public LayerMask LayerEnvironmentScan
+    {
+        get { return (1 << 0); }
+    }
+
+    // layer mask for when scanning for items 
+    public LayerMask LayerItemScan
+    {
+        get { return (1 << 0) | (1 << 9); }
+    }
+
+    // layer mask for when scanning for item view models 
+    public LayerMask LayerItemViewScan
+    {
+        //get { return (1 << 11) | (1 << 12) | (1 << 13); }
+        get { return (1 << 11) | (1 << 12); }
+    }
+
+    // layer mask for when scanning for player 
+    public LayerMask LayerPlayerScan
+    {
+        // get { return (1 << 0) | (1 << 9) | (1 << 10) | (1 << 16); }
+        get { return (1 << 0) | (1 << 9) | (1 << 10); }
+    }
+
+    // layer mask for when scanning for entity 
+    public LayerMask LayerEntityScan
+    {
+        // get { return (1 << 0) | (1 << 9) | (1 << 10) | (1 << 16); }
+        get { return (1 << 0) | (1 << 9) | (1 << 15); }
+    }
+
+    #endregion
+}

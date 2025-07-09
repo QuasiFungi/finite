@@ -1,0 +1,46 @@
+using UnityEngine;
+using Panda;
+
+public class entity_thing : entity_ai
+{
+    public float _entranceTimer;
+
+    [Task]
+    public bool IsEntrance
+    {
+        get { return _entranceTimer <= 0; }
+    }
+
+    [Task]
+    public void IsEscape()
+    {
+        // _move.position = _positionSonar;
+        // 
+        Task.current.Fail();
+    }
+
+    [Task]
+    public void SetBait()
+    {
+        // glowy boi
+        // 
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void UnsetBait()
+    {
+        // no glo
+        // 
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void EntranceTickUp(float rate)
+    {
+        if (_entranceTimer > 0)
+            _entranceTimer -= Time.deltaTime * rate;
+        // 
+        Task.current.Succeed();
+    }
+}

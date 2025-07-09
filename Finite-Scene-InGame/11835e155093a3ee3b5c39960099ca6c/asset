@@ -1,0 +1,119 @@
+using UnityEngine;
+
+public class itemInteractive_generator : base_item
+{
+    // anim ?
+    private bool _isPower;
+    private bool _isOn;
+    public itemDialogue_junction _junctionNE;
+    public itemDialogue_junction _junctionNW;
+    public itemDialogue_junction _junctionSE;
+    public itemDialogue_junction _junctionSW;
+    public override void Initialize()
+    {
+        base.Initialize();
+        // 
+        _isPower = false;
+        _isOn = false;
+    }
+    public void Trigger_Passive()
+    {
+        // repaired and sunset
+        if (_isOn && game_master.Instance.GameTimer <= 1350)
+        {
+            // powered
+            _isPower = true;
+            _junctionNE.PowerGenerator();
+            _junctionNW.PowerGenerator();
+            _junctionSE.PowerGenerator();
+            _junctionSW.PowerGenerator();
+        }
+    }
+    public void Trigger_Interactive()
+    {
+        // fixed
+        if (_isOn)
+        {
+            if (_isPower)
+            {
+                // trigger dialogue menu 
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("The generator is running");
+            }
+            else
+            {
+                // trigger dialogue menu 
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("All parts appear to be in place");
+            }
+        }
+        // borked
+        else
+        {
+            // try item...
+            if (base_player.Instance.ItemEquipped != null)
+            {
+                // lantern/master key
+                if (base_player.Instance.ItemEquipped.Slug == "lantern" || base_player.Instance.ItemEquipped.Slug == "key_master")
+                {
+                    // spin
+                    if (_isPower)
+                    {
+                        // trigger dialogue menu 
+                        manager_ui.Instance.Trigger_DisplayMessage();
+                        display_message.Instance.SetMessage("The power is not being carried through ?");
+                    }
+                    else
+                    {
+                        // trigger dialogue menu 
+                        manager_ui.Instance.Trigger_DisplayMessage();
+                        display_message.Instance.SetMessage("There appears to be a gear piece missing");
+                    }
+                }
+                // gear ???
+                else if (base_player.Instance.ItemEquipped.Slug == "smeltedGear")
+                {
+                    // spin
+                    if (_isPower)
+                    {
+                        // trigger dialogue menu 
+                        manager_ui.Instance.Trigger_DisplayMessage();
+                        display_message.Instance.SetMessage("I'm gonna lose a finger");
+                    }
+                    // okay
+                    else
+                    {
+                        // trigger dialogue menu 
+                        manager_ui.Instance.Trigger_DisplayMessage();
+                        display_message.Instance.SetMessage("The piece fit perfectly");
+                    }
+                    _isOn = true;
+                }
+                // bad item
+                else
+                {
+                    // trigger dialogue menu 
+                    manager_ui.Instance.Trigger_DisplayMessage();
+                    display_message.Instance.SetMessage("This thing doesn't seem to work here");
+                }
+            }
+            // ...nope
+            else
+            {
+                // spin
+                if (_isPower)
+                {
+                    // trigger dialogue menu 
+                    manager_ui.Instance.Trigger_DisplayMessage();
+                    display_message.Instance.SetMessage("The gears are turning but power is not being carried through ?");
+                }
+                else
+                {
+                    // trigger dialogue menu 
+                    manager_ui.Instance.Trigger_DisplayMessage();
+                    display_message.Instance.SetMessage("There appears to be a gear piece missing");
+                }
+            }
+        }
+    }
+}

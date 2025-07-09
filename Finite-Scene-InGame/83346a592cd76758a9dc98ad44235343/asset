@@ -1,0 +1,23 @@
+using UnityEngine;
+using Panda;
+
+public class entity_musician : entity_ai
+{
+    // protected override List<Waypoint> Filter_Waypoints()
+    // {
+    //     List<Waypoint> waypoints = new List<Waypoint>();
+    //     foreach (Waypoint waypoint in base.Filter_Waypoints())
+    //         // filter for event... [church]
+    //         if (game_master.Instance._worldLight.intensity - game_variables.Instance.Brightness <= waypoint.factor)
+    //             waypoints.Add(waypoint);
+    //     return waypoints;
+    // }
+
+    [Task]
+    public void IsPlay()
+    {
+        // check piano key inserted ?
+        // 
+        Task.current.Fail();
+    }
+}

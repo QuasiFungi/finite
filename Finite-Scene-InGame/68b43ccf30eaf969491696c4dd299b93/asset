@@ -1,0 +1,25 @@
+using System.Collections;
+using UnityEngine;
+
+public class trigger_damage : MonoBehaviour
+{
+    private float _damage;
+
+    void Awake()
+    {
+        _damage = 0;
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.layer == game_variables.Instance.LayerEntity)
+            other.transform.GetComponent<base_entity>().Register_Damage(_damage);
+        else if (other.gameObject.layer == game_variables.Instance.LayerPlayer)
+            base_player.Instance.DrainHealth(_damage);
+    }
+
+    public void SetDamage(float value)
+    {
+        _damage = value;
+    }
+}

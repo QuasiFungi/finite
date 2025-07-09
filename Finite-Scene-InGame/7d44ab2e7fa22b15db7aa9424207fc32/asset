@@ -1,0 +1,47 @@
+using UnityEngine;
+
+public class itemInteractive_slotPiano : base_item
+{
+    private Animator _anim;
+    public bool _isOn;    // cache ?
+    public override void Initialize()
+    {
+        // 
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        // ? save file
+        // _isOn = 
+    }
+    public override void Trigger_Interaction()
+    {
+        // trigger dialogue menu 
+        manager_ui.Instance.Trigger_DisplayMessage();
+        // already working
+        if (_isOn)
+            display_message.Instance.SetMessage("The key is fixed in place, I can't remove it");
+        // empty
+        else
+        {
+            // try item
+            if (base_player.Instance.ItemEquipped != null)
+            {
+                // item/master check
+                if (base_player.Instance.ItemEquipped.Slug == "key_piano" || base_player.Instance.ItemEquipped.Slug == "key_master")
+                {
+                    // work
+                    _isOn = true;
+                    _anim.SetTrigger("On");
+                    display_message.Instance.SetMessage("The key fits perfectly");
+                    // c o n s u m e
+                    base_player.Instance.Trigger_ItemRemove();
+                }
+                // fail
+                else
+                    display_message.Instance.SetMessage("This thing doesn't seem to work here");
+            }
+            // no item
+            else
+                display_message.Instance.SetMessage("There appears to be an empty slot here");
+        }
+    }
+}

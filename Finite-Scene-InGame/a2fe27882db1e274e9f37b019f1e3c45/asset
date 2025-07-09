@@ -1,0 +1,18 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class diary : MonoBehaviour
+{
+    public static diary Instance;
+
+    void Awake()
+    {
+        Instance = this;
+    }
+
+    void OnEnable()
+    {
+        // add and populate entries from base player diary 
+    }
+}

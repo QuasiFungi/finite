@@ -1,0 +1,34 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class testWaterLevel : MonoBehaviour
+{
+    // public float _trigger;
+    private float _distance;
+    private float _time;
+
+    private float _timer;
+    private Vector3 _positionFrom;
+    private Vector3 _positionTo;
+
+    void Awake()
+    {
+        _distance = 2f;
+        _time = 10f;
+        _positionFrom = transform.position;
+        _positionTo = transform.position + Vector3.up * _distance;
+        _timer = _time;
+    }
+
+    void Update()
+    {
+        if (game_master.Instance.GameTimer > 15f)
+            return;
+        // 
+        transform.position = Vector3.Lerp(_positionTo, _positionFrom, _timer / _time);
+        if (_timer > 0)
+            _timer -= Time.deltaTime;
+        // transform.position += Vector3.up * _distance * Time.deltaTime;
+    }
+}

@@ -1,0 +1,199 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class menu_settings : MonoBehaviour
+{
+    public static menu_settings Instance;
+
+    public Slider _durationAutosave;
+    public Text _durationAutosaveText;
+    public Slider _durationDisplayMessage;
+    public Text _durationDisplayMessageText;
+    public Slider _fov;
+    public Text _fovText;
+    public Slider _sensitivityMovement;
+    public Text _sensitivityMovementText;
+    public Slider _sensitivityFreeCam;
+    public Text _sensitivityFreeCamText;
+    public Dropdown _movementH;
+    public Dropdown _movementV;
+    public Dropdown _cameraH;
+    public Dropdown _cameraV;
+    public Dropdown _chirality;
+    public Dropdown _displayBattery;
+    public Dropdown _vibration;
+    public Toggle _audioAssist;
+    public Dropdown _colorblindAssist;
+    public Slider _environmentSounds;
+    public Text _environmentSoundsText;
+    public Slider _enemySounds;
+    public Text _enemySoundsText;
+    public Dropdown _language;
+    public Dropdown _freeCamera;
+    public Button _reset;
+
+    void Awake()
+    {
+        Instance = this;
+
+        // link up all options to game_variables instance 
+        _durationAutosave.onValueChanged.AddListener(delegate { SetAutosave(); });
+        _durationDisplayMessage.onValueChanged.AddListener(delegate { SetDisplayMessage(); });
+        _fov.onValueChanged.AddListener(delegate { SetFOV(); });
+        _sensitivityMovement.onValueChanged.AddListener(delegate { SetSensitivityMovement(); });
+        _sensitivityFreeCam.onValueChanged.AddListener(delegate { SetSensitivityFreeCam(); });
+        _movementH.onValueChanged.AddListener(delegate { SetMovementH(); });
+        _movementV.onValueChanged.AddListener(delegate { SetMovementV(); });
+        _cameraH.onValueChanged.AddListener(delegate { SetCameraH(); });
+        _cameraV.onValueChanged.AddListener(delegate { SetCameraV(); });
+        _chirality.onValueChanged.AddListener(delegate { SetChirality(); });
+        _displayBattery.onValueChanged.AddListener(delegate { SetDisplayBattery(); });
+        _vibration.onValueChanged.AddListener(delegate { SetVibration(); });
+        _audioAssist.onValueChanged.AddListener(delegate { SetAudioAssist(); });
+        _colorblindAssist.onValueChanged.AddListener(delegate { SetColorblindAssist(); });
+        _environmentSounds.onValueChanged.AddListener(delegate { SetEnvironmentSounds(); });
+        _enemySounds.onValueChanged.AddListener(delegate { SetEnemySounds(); });
+        _language.onValueChanged.AddListener(delegate { SetLanguage(); });
+        _freeCamera.onValueChanged.AddListener(delegate { SetFreeCamera(); });
+        _reset.onClick.AddListener(delegate { Reset(); });
+    }
+
+    private void OnEnable()
+    {
+        Reload();
+    }
+
+    void Update()
+    {
+        _durationAutosaveText.text = "" + _durationAutosave.value;
+        _durationDisplayMessageText.text = "" + _durationDisplayMessage.value;
+        _fovText.text = "" + _fov.value;
+        _sensitivityMovementText.text = "" + _sensitivityMovement.value;
+        _sensitivityFreeCamText.text = "" + _sensitivityFreeCam.value;
+        _environmentSoundsText.text = "" + _environmentSounds.value;
+        _enemySoundsText.text = "" + _enemySounds.value;
+    }
+
+    public void Reload()
+    {
+        _durationAutosave.value = game_variables.Instance.DurationAutosave;
+        _durationDisplayMessage.value = game_variables.Instance.DurationDisplayMessage;
+        _fov.value = game_variables.Instance.FOV;
+        _sensitivityMovement.value = game_variables.Instance.SensitivityMovement;
+        _sensitivityFreeCam.value = game_variables.Instance.SensitivityFreeCam;
+        _movementH.value = game_variables.Instance.MovementH_Int;
+        _movementV.value = game_variables.Instance.MovementV_Int;
+        _cameraH.value = game_variables.Instance.CameraH_Int;
+        _cameraV.value = game_variables.Instance.CameraV_Int;
+        _chirality.value = game_variables.Instance.Chirality_Int;
+        _displayBattery.value = game_variables.Instance.DisplayBattery;
+        _vibration.value = game_variables.Instance.Vibration;
+        _audioAssist.isOn = game_variables.Instance.AudioAssist;
+        _colorblindAssist.value = game_variables.Instance.ColorblindAssist;
+        _environmentSounds.value = game_variables.Instance.EnvironmentSounds;
+        _enemySounds.value = game_variables.Instance.EnemySounds;
+        _language.value = game_variables.Instance.Language;
+        _freeCamera.value = game_variables.Instance.FreeCamera_Int;
+    }
+
+    #region Setters [Wrappers]
+
+    public void SetAutosave()
+    {
+        game_variables.Instance.SetAutosave(_durationAutosave.value);
+    }
+
+    public void SetDisplayMessage()
+    {
+        game_variables.Instance.SetDisplayMessage(_durationDisplayMessage.value);
+    }
+
+    public void SetFOV()
+    {
+        game_variables.Instance.SetFOV(_fov.value);
+    }
+
+    public void SetSensitivityMovement()
+    {
+        game_variables.Instance.SetSensitivityMovement(_sensitivityMovement.value);
+    }
+
+    public void SetSensitivityFreeCam()
+    {
+        game_variables.Instance.SetSensitivityFreeCam(_sensitivityFreeCam.value);
+    }
+
+    public void SetMovementH()
+    {
+        game_variables.Instance.SetMovementH(_movementH.value);
+    }
+
+    public void SetMovementV()
+    {
+        game_variables.Instance.SetMovementV(_movementV.value);
+    }
+
+    public void SetCameraH()
+    {
+        game_variables.Instance.SetCameraH(_cameraH.value);
+    }
+
+    public void SetCameraV()
+    {
+        game_variables.Instance.SetCameraV(_cameraV.value);
+    }
+
+    public void SetChirality()
+    {
+        game_variables.Instance.SetChirality(_chirality.value);
+    }
+
+    public void SetDisplayBattery()
+    {
+        game_variables.Instance.SetDisplayBattery(_displayBattery.value);
+    }
+
+    public void SetVibration()
+    {
+        game_variables.Instance.SetVibration(_vibration.value);
+    }
+
+    public void SetAudioAssist()
+    {
+        game_variables.Instance.SetAudioAssist(_audioAssist.isOn);
+    }
+
+    public void SetColorblindAssist()
+    {
+        game_variables.Instance.SetColorblindAssist(_colorblindAssist.value);
+    }
+
+    public void SetEnvironmentSounds()
+    {
+        game_variables.Instance.SetEnvironmentSounds(_environmentSounds.value);
+    }
+
+    public void SetEnemySounds()
+    {
+        game_variables.Instance.SetEnemySounds(_enemySounds.value);
+    }
+
+    public void SetLanguage()
+    {
+        game_variables.Instance.SetLanguage(_language.value);
+    }
+
+    public void SetFreeCamera()
+    {
+        game_variables.Instance.SetFreeCam(_freeCamera.value);
+    }
+
+    public void Reset()
+    {
+        game_variables.Instance.Reset();
+    }
+
+    #endregion
+}

@@ -1,0 +1,191 @@
+using UnityEngine;
+
+public class itemInteractive_slideLock : base_item
+{
+    private Animator _anim;
+    public string[] check;    //item(s) that unlock
+    public bool _isLocked;
+    public bool _isOpen;
+    public itemInteractive_toggleLock _door;    // ???
+    public override void Initialize()
+    {
+        base.Initialize();
+        // 
+        _anim = GetComponent<Animator>();
+        _anim.SetBool("IsOpen", _isOpen);
+    }
+    public override void Trigger_Interaction()
+    {
+        // locked
+        if (_isLocked)
+        {
+            // can be unlocked
+            if (check != null)
+            {
+                // try item
+                if (base_player.Instance.ItemEquipped != null)
+                {
+                    // correct item equipped...
+                    foreach (string item in check)
+                    {
+                        // master key check
+                        if (base_player.Instance.ItemEquipped.Slug == item || base_player.Instance.ItemEquipped.Slug == "key_master")
+                        {
+                            // unlock, open
+                            _isLocked = false;
+                            _isOpen = true;
+                            _anim.SetBool("IsOpen", true);
+                            if (_door != null)
+                                _door.Unlock();
+                            // _anim.SetTrigger("DoOpen");
+                            // ??? dialogue spam
+                            // trigger dialogue menu 
+                            manager_ui.Instance.Trigger_DisplayMessage();
+                            display_message.Instance.SetMessage("It's unlocked now");
+                        }
+                    }
+                    // ...nope
+                    if (_isLocked)
+                    {
+                        // bloomin or need to see
+                        if (base_player.Instance.ItemEquipped.Slug == "flower" || base_player.Instance.ItemEquipped.Slug == "lantern")
+                        {
+                            // trigger dialogue menu
+                            manager_ui.Instance.Trigger_DisplayMessage();
+                            display_message.Instance.SetMessage("I can't get it open");
+                        }
+                        // bad item
+                        else
+                        {
+                            // trigger dialogue menu
+                            manager_ui.Instance.Trigger_DisplayMessage();
+                            display_message.Instance.SetMessage("This thing doesn't seem to work here");
+                        }
+                    }
+                }
+                // no item
+                else
+                {
+                    // cant open
+                    // trigger dialogue menu 
+                    manager_ui.Instance.Trigger_DisplayMessage();
+                    display_message.Instance.SetMessage("I can't get it open");
+                }
+            }
+            // welp
+            else
+            {
+                // door stuck
+                // trigger dialogue menu 
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("It's jammed");
+            }
+        }
+        // unlocked
+        else
+        {
+            // open
+            if (_isOpen)
+            {
+                // can be locked
+                if (check != null)
+                {
+                    // try item
+                    if (base_player.Instance.ItemEquipped != null)
+                    {
+                        // correct item equipped...
+                        foreach (string item in check)
+                        {
+                            // check/master key
+                            if (base_player.Instance.ItemEquipped.Slug == item || base_player.Instance.ItemEquipped.Slug == "key_master")
+                            {
+                                // lock, close
+                                _isLocked = true;
+                                _isOpen = false;
+                                _anim.SetBool("IsOpen", false);
+                                if (_door != null)
+                                    _door.Lock();
+                                // _anim.SetTrigger("DoOpen");
+                                // _anim.enabled = true;
+                                // trigger dialogue menu 
+                                manager_ui.Instance.Trigger_DisplayMessage();
+                                display_message.Instance.SetMessage("It's locked now");
+                            }
+                        }
+                        // ...nope
+                        if (!_isLocked)
+                        {
+                            // close
+                            _isOpen = false;
+                            _anim.SetBool("IsOpen", false);
+                            // _anim.SetTrigger("DoOpen");
+                            // _anim.enabled = true;
+                            // bad item
+                            // blooming or need to see
+                            if (base_player.Instance.ItemEquipped.Slug != "flower" && base_player.Instance.ItemEquipped.Slug != "lantern")
+                            {
+                                // trigger dialogue menu
+                                manager_ui.Instance.Trigger_DisplayMessage();
+                                display_message.Instance.SetMessage("This thing doesn't seem to work here");
+                            }
+                        }
+                    }    
+                }
+                // default
+                if (_isOpen)
+                {
+                    // close
+                    _isOpen = false;
+                    _anim.SetBool("IsOpen", false);
+                    // Debug.Log("close");
+                    // _anim.SetTrigger("DoOpen");
+                    // _anim.enabled = true;
+                }
+            }
+            // closed
+            else
+            {
+                // can be locked
+                if (check != null)
+                {
+                    // try item
+                    if (base_player.Instance.ItemEquipped != null)
+                    {
+                        // correct item equipped...
+                        foreach (string item in check)
+                        {
+                            // check/master key
+                            if (base_player.Instance.ItemEquipped.Slug == item || base_player.Instance.ItemEquipped.Slug == "key_master")
+                            {
+                                // lock
+                                _isLocked = true;
+                                if (_door != null)
+                                    _door.Lock();
+                                // trigger dialogue menu 
+                                manager_ui.Instance.Trigger_DisplayMessage();
+                                display_message.Instance.SetMessage("It's locked now");
+                            }
+                        }
+                        // ...nope
+                        if (!_isLocked)
+                        {
+                            // open
+                            _isOpen = true;
+                            _anim.SetBool("IsOpen", true);
+                            // bad item
+                            // _anim.SetTrigger("DoOpen");
+                        }
+                    }
+                }
+                // default
+                if (!_isLocked && !_isOpen)
+                {
+                    // open
+                    _isOpen = true;
+                    _anim.SetBool("IsOpen", true);
+                    // _anim.SetTrigger("DoOpen");
+                }
+            }
+        }
+    }
+}

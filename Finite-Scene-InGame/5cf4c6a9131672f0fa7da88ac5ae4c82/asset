@@ -1,0 +1,136 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class item_flower : MonoBehaviour
+{
+    // ehhhh~
+    public static item_flower Instance;
+    
+    private int _counterWhite;
+    // private int _counterBlack;
+    
+    public Light _light;
+    public float _intensityOn;
+    public float _intensityOff;
+
+    private int _state;
+    private int _stateMax;
+    private float _time;
+    private float _timer;
+    private int _glow;
+    private int _glowMax;
+
+    private bool _isShroom;
+    
+    void Awake()
+    {
+        Instance = this;
+
+        _counterWhite = 0; //>seed>bloom
+        // _counterBlack = 0;   //>bloom>glow
+
+        _state = 0;
+        _stateMax = 10;
+        _time = 15;
+        _timer = _time;
+        _glow = 0;
+        _glowMax = 19;
+        _isShroom = false;
+
+        // - seed
+        // 01 - sprout
+        // 02 - wither
+        // - flower
+        // 01 - bulb at stem base
+        // 02 - petals shrink
+        // 03 - bulb half way
+        // 04 - petals turn thin, stringy
+        // 05 - bulb reach top
+        // 06 - protrusion along head base
+        // 07 - flower center shrink, shrivel
+        // 08 - bulb head grow
+        // 09 - petals fall off, only small spikes left
+        // 10 - bulb head fully grown
+        // - shroom
+
+        // wisp black [6, revert shroom full]
+        // wisp white [19, slide glow intensity color over spectrum low to high]
+        // seed > sapling > flower > shroom [sapling on shroom no wisp black > glow fade wither rot on equip entity presence]
+        // flower > shroom [equip wisp white presence, deter enemies > 10 timer stages on equip flower entity presence]
+        // fossil > lantern super [disintegrate entity collision > disintegrate entity visiblility]
+        // super lantern fuel amount scale to counter wisp black white?
+    }
+    void Update()
+    {
+        // 
+        if (base_player.Instance.ItemEquipped != null && base_player.Instance.ItemEquipped.Slug == "flower")
+        {
+            // all nearby entites ?
+            Collider[] hitColliders = Physics.OverlapSphere(transform.position, game_variables.Instance.CameraFar);
+            // Collider[] hitColliders = Physics.OverlapSphere(Position, test_loudness);
+            for (int i = 0; i < hitColliders.Length; i++)
+                if (hitColliders[i].gameObject.layer == game_variables.Instance.LayerEntity)
+                {
+                    // visbility
+                    RaycastHit hitInfo;
+                    if (Physics.Raycast(transform.position, hitColliders[i].transform.position - transform.position, out hitInfo, game_variables.Instance.CameraFar, game_variables.Instance.LayerEntityScan))
+                    {
+                        // 
+                        _timer -= Time.deltaTime;
+                        if (_timer <= 0)
+                        {
+                            _state++;
+                            // shroomed
+                            if (_state < _stateMax)
+                                _timer = _time;
+                            else
+                                _isShroom = true;
+                        }
+                        if (_isShroom)
+                            // 
+                            hitInfo.transform.GetComponent<base_entity>().SetShroom();
+                        else
+                            // 
+                            hitInfo.transform.GetComponent<base_entity>().SetFlower();
+                    }
+                }
+            _light.intensity = Mathf.Lerp(_intensityOff, _intensityOn, _counterWhite / (float)_glowMax);
+        }
+    }
+    // called by entity_corpse on discover
+    public void AbsorbWhite()
+    {
+        // 
+        _counterWhite++;
+        // Debug.Log("itemPickup_flower:\tcorpse\t" + _counterCorpse + "/");
+        // // trigger dialogue menu
+        // manager_ui.Instance.Trigger_DisplayMessage();
+        // display_message.Instance.SetMessage("itemPickup_flower:\tcorpse\t" + _counterCorpse + "/16");
+    }
+    // called by entity_wisp on equip nearby
+    public void AbsorbBlack()
+    {
+        // 
+        // _counterBlack++;
+        _isShroom = false;
+        _state = 0;
+        _timer = _time;
+        // Debug.Log("Flower Wisp:\twisp:\t" + _counterWisp + "/");
+        // // trigger dialogue menu 
+        // manager_ui.Instance.Trigger_DisplayMessage();
+        // display_message.Instance.SetMessage("itemPickup_flower:\twisp:\t" + _counterWisp + "/06");
+    }
+
+    // // uhhh ???
+    // public bool IsBloom
+    // {
+    //     get { return false; }
+    // }
+
+    // // uhhh ???
+    // public bool IsShroom
+    // {
+    //     get { return false; }
+    // }
+}

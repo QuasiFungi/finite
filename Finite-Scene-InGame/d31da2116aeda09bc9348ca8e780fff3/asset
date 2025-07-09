@@ -1,0 +1,25 @@
+using UnityEngine;
+
+public class itemDialogue_scarecrow : base_item
+{
+    private bool _isPower;
+    public override void Trigger_Dialogue()
+    {
+        if (_isPower)
+        {
+            // trigger dialogue menu 
+            manager_ui.Instance.Trigger_DisplayMessage();
+            display_message.Instance.SetMessage("Some mechanism inside seems to be powered up");
+        }
+        else
+        {
+            // trigger dialogue menu 
+            manager_ui.Instance.Trigger_DisplayMessage();
+            display_message.Instance.SetMessage("Its a scarecrow?");
+        }
+    }
+    public void Power(bool value)
+    {
+        _isPower = value;
+    }
+}

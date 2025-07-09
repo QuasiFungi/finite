@@ -1,0 +1,179 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+[RequireComponent(typeof(Camera))]
+public class player_camera : MonoBehaviour
+{
+    public static player_camera Instance;
+    public Camera cam_Main;
+    public Camera cam_ItemGlow;
+    public Camera cam_ItemView;
+
+    private float _rotateYFreeCamera;             //maximum vertical rotation of camera 
+    private float _cameraHeight;
+    private float mouseX;                       //degrees
+    private float mouseY;                       //degrees
+    private float _cacheMouseX;                 //degrees
+    private float _cacheMouseY;                 //degrees
+
+    // --- Item Highlight --- 
+    //[Range(0, 10)]
+    private float _intensityHighlight;
+    private Material _compositeMat;
+    // --- Item Highlight --- 
+
+    //private Transform item_model;                //reference to transform of item model [taken from active "viewed" base item] 
+
+    void Awake()
+    {
+        Instance = this;
+
+        cam_Main = GetComponent<Camera>();
+        // _rotateYFreeCamera = 2.5f;
+        _rotateYFreeCamera = 89f;
+        _cameraHeight = 1.0f;
+        mouseX = 0;
+        mouseY = 0;
+        _cacheMouseY = 0;
+        _intensityHighlight = 1.5f;
+    }
+
+    void Update()
+    {
+        // apply settings ?
+        cam_Main.fieldOfView = game_variables.Instance.FOV;
+        cam_ItemGlow.fieldOfView = game_variables.Instance.FOV;
+        //cam_ItemView.fieldOfView = game_variables.Instance.FOV;
+        cam_Main.farClipPlane = game_variables.Instance.CameraFar;
+        cam_ItemGlow.farClipPlane = game_variables.Instance.CameraFar;
+
+        HandlePlayerInput();
+
+        // only when alive 
+        if (base_player.Instance.IsAlive)
+            UpdatePositionAndRotation();
+    }
+
+    //private void HandlePlayerInput()
+    //{
+    //    if (input_controller.Instance.IsFreeCamera)
+    //    {
+    //        // Record non zero vertical offset from center 
+    //        if (input_controller.Instance.CameraV != 0)
+    //            mouseY = -input_controller.Instance.CameraV + _cacheMouseY;
+    //    }
+    //    else
+    //        // Record current vertical offset as new center 
+    //        _cCameraHacheMouseY = mouseY;
+    //    mouseY = Mathf.Clamp(mouseY, -_rotateYFreeCamera, _rotateYFreeCamera);
+    //}
+
+    // ??? Requires bug testing 
+    void HandlePlayerInput()
+    {
+        // -- 3.5 -- 
+        // camera input detected
+        if (input_controller.Instance.IsFreeCamera)
+        {
+            // Set Mouse X
+            // // contact with climb surface collider
+            // if (player_motor.Instance.IsClimb)
+            //     // apply displacement relative to cached horizontal displacement
+            //     mouseX = _cacheMouseX + input_controller.Instance.CameraH;
+            // // free movement
+            // else
+            // {
+            //     // wait for motor to update
+            //     if (player_motor.Instance.HasCycled)
+            //         // track to motor rotation
+            //         mouseX = player_motor.Instance.VerticalRotation;
+            //     // cache current camera horzontal displacement/rotation
+            //     _cacheMouseX = mouseX;
+            // }
+            mouseX = player_motor.Instance.VerticalRotation;
+            // Set Mouse Y
+            // apply displacement relative to cached vertical displacement
+            mouseY = _cacheMouseY - input_controller.Instance.CameraV;
+        }
+        // no camera input [default]
+        else
+        {
+            // cache last vertical displacement
+            _cacheMouseY = mouseY;
+            // cache last horzontal displacement ?
+            _cacheMouseX = mouseX;
+        }
+        // apply vertical displacement bounds
+        mouseY = Mathf.Clamp(mouseY, -_rotateYFreeCamera, _rotateYFreeCamera);
+    }
+
+    private void UpdatePositionAndRotation()
+    {
+        // Snap cameras to player position ?
+        transform.position = player_motor.Instance.Position + Vector3.up * _cameraHeight;
+        cam_ItemView.transform.position = player_motor.Instance.Position + Vector3.up * _cameraHeight;
+
+        // Set Camera Rotations
+        transform.rotation = Quaternion.Euler(new Vector3(mouseY, mouseX, 0));
+        cam_ItemView.transform.rotation = Quaternion.Euler(new Vector3(mouseY, mouseX, 0));
+    }
+
+    // Called by base player on reset call 
+    public void ResetAll()
+    {
+        _cacheMouseY = 0;
+    }
+
+    // --- Item Highlight --- 
+    // void OnEnable()
+    // {
+    //    _compositeMat = new Material(Shader.Find("Hidden/GlowComposite"));
+    // }
+
+    // void OnRenderImage(RenderTexture src, RenderTexture dst)
+    // {
+    //    _compositeMat.SetFloat("_Intensity", _intensityHighlight);
+    //    Graphics.Blit(src, dst, _compositeMat, 0);
+    // }
+    // --- Item Highlight --- 
+
+    #region Properties
+
+    public Vector3 Position
+    {
+        get { return transform.position; }
+    }
+
+    public Vector3 Forward
+    {
+        get { return transform.forward; }
+    }
+
+    public Vector3 Right
+    {
+        get { return transform.right; }
+    }
+
+    public Vector3 Up
+    {
+        get { return transform.up; }
+    }
+
+    public float VerticalOrientation
+    {
+        // camera vertical invert ?
+        // get { if (mouseY >= 0) return 1; else return -1; }
+        // get { return Mathf.Sign(mouseY) * game_variables.Instance.CameraV; }
+        // -ve, up; +ve down
+        get { return Mathf.Sign(-mouseY); }
+    }
+
+// eh ?
+    public float FOV_Vertical
+    {
+        get { return cam_Main.fieldOfView / cam_Main.aspect; }
+    }
+
+    #endregion
+}

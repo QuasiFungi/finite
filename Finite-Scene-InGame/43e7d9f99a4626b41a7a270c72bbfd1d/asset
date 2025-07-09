@@ -1,0 +1,42 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class item_model : MonoBehaviour
+{
+    private float _viewRotationX;
+    private float _viewRotationY;
+
+    void Update()
+    {
+        // not viewing item
+        if (!manager_ui.Instance.IsItemView)
+        {
+            // follow camera
+            transform.LookAt(player_camera.Instance.Position);
+            // clear buffer
+            _viewRotationX = 0;
+            _viewRotationY = 0;
+        }
+        // any axis rotation not applied
+        else if (_viewRotationX != item_view.Instance.ViewRotationX || _viewRotationY != item_view.Instance.ViewRotationY)
+        {
+            // inactive
+            if (!item_view.Instance.IsActive)
+            {
+                // clear buffer
+                _viewRotationX = 0;
+                _viewRotationY = 0;
+            }
+            else
+            {
+                // apply rotation difference
+                transform.RotateAround(transform.position, player_camera.Instance.Right, _viewRotationX - item_view.Instance.ViewRotationX);
+                transform.RotateAround(transform.position, player_camera.Instance.Up, _viewRotationY - item_view.Instance.ViewRotationY);
+                // store updated rotation
+                _viewRotationX = item_view.Instance.ViewRotationX;
+                _viewRotationY = item_view.Instance.ViewRotationY;
+            }
+        }
+    }
+}

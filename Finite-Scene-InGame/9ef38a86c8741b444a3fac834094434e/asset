@@ -1,0 +1,149 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class manager_ui : MonoBehaviour
+{
+    public static manager_ui Instance;
+    
+    public GameObject menu_settings;
+    public GameObject menu_dead;
+
+    // public menu_itembag menu_itembag;
+    public GameObject menu_itemview;
+    public GameObject menu_displayMessage;
+
+    public enum UIState
+    {
+        INGAME, 
+        INGAME_SETTINGS, 
+        INGAME_DEAD, 
+    }
+    public UIState state_current;
+
+    void Awake()
+    {
+        Instance = this;
+
+        // Hide all menus 
+        menu_settings.SetActive(false);
+        menu_dead.SetActive(false);
+
+        // menu_itembag.SetActive(false);
+        // menu_itembag.Instance.SetOpen(false);
+        menu_itemview.SetActive(false);
+        menu_displayMessage.SetActive(false);
+    }
+
+    void Update()
+    {
+        switch (state_current)
+        {
+            case UIState.INGAME:
+                if (menu_settings.activeSelf)
+                    menu_settings.SetActive(false);
+                break;
+            case UIState.INGAME_SETTINGS:
+                if (!menu_settings.activeSelf)
+                    menu_settings.SetActive(true);
+                break;
+            case UIState.INGAME_DEAD:
+                if (!menu_dead.activeSelf)
+                    menu_dead.SetActive(true);
+                break;
+        }
+    }
+
+    #region Menu / Sub-Menu Trigger Calls 
+
+    // Called by settings button 
+    public void Trigger_Settings()
+    {
+        if (state_current == UIState.INGAME)
+            SetState(UIState.INGAME_SETTINGS);
+        else if (state_current == UIState.INGAME_SETTINGS)
+            SetState(UIState.INGAME);
+    }
+
+    // // Called by diary button ??? 
+    // public void Trigger_Diary()
+    // {
+    //     // if menu active and diary not 
+    //     if (menu_itemview.activeSelf && !base_player.Instance.isViewDiaryModel)
+    //     {
+    //         item_view.Instance.ClearModels();
+    //         base_player.Instance.Toggle_ViewDiary();
+    //     }
+    //     // if only menu active 
+    //     else if (menu_itemview.activeSelf)
+    //         menu_itemview.SetActive(false);
+    //     // if menu inactive and diary ? 
+    //     else
+    //     {
+    //         base_player.Instance.Toggle_ViewDiary();
+    //         menu_itemview.SetActive(true);
+    //     }
+    //     SetState(UIState.INGAME);
+    // }
+
+    // Called by itembag button ??? 
+    public void Trigger_Itembag()
+    {
+        // if (menu_itembag.activeSelf)
+        if (menu_itembag.Instance.IsOpen)
+            menu_itembag.Instance.SetOpen(false);
+            // menu_itembag.SetActive(false);
+        else
+            menu_itembag.Instance.SetOpen(true);
+            // menu_itembag.SetActive(true);
+        SetState(UIState.INGAME);
+    }
+
+    // Called on item interact ??? 
+    public void Trigger_ItemView()
+    {
+        //item_view = item;
+        if (menu_itemview.activeSelf)
+            menu_itemview.SetActive(false);
+        else
+            menu_itemview.SetActive(true);
+        SetState(UIState.INGAME);
+    }
+
+    // Called on item interact ??? 
+    public void Trigger_DisplayMessage()
+    {
+        if (!menu_displayMessage.activeSelf)
+            menu_displayMessage.SetActive(true);
+        SetState(UIState.INGAME);
+    }
+
+    #endregion
+
+    // ??? 
+    public void SetState(UIState state)
+    {
+        state_current = state;
+    }
+
+    // ??? Returns true if in MENU or any of its sub States 
+    public bool IsInMenu
+    {
+        get { return state_current == UIState.INGAME_SETTINGS; }
+    }
+    // ??? used by base player ?
+    public bool IsAlive
+    {
+        get { return state_current != UIState.INGAME_DEAD; }
+    }
+    // 
+    public bool IsItemView
+    {
+        get { return menu_itemview.activeSelf; }
+    }
+
+    public UIState State
+    {
+        get { return state_current; }
+    }
+}

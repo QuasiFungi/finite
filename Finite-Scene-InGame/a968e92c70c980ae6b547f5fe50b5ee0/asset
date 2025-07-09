@@ -1,0 +1,78 @@
+using UnityEngine;
+
+public class itemView_fuseCracked : base_item
+{
+    private Animator _anim;
+    private bool _isBroken;
+    private bool _isPower;
+    private Animator _animModel;
+    public override void Initialize()
+    {
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        _animModel = _viewModel.transform.GetComponent<Animator>();
+        // 
+        _isBroken = false;
+        _isPower = false;
+    }
+    public override void Trigger_Interaction()
+    {
+        if (_isPower)
+        {
+            if (_isBroken)
+            {
+                // trigger dialogue menu
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("It doesn't seem to be in working condition anymore ?");
+            }
+            else
+            {
+                // trigger dialogue menu
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("The sparking doesn't look good, I think I should get back ?");
+            }
+        }
+        else
+        {
+            if (_isBroken)
+            {
+                // trigger dialogue menu
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("Its broken now ?");
+            }
+            else
+            {
+                // trigger dialogue menu
+                manager_ui.Instance.Trigger_DisplayMessage();
+                display_message.Instance.SetMessage("It appears to be slightly damaged ?");
+            }
+        }
+    }
+    // called by breaker
+    public void Break()
+    {
+        _isBroken = true;
+        _anim.SetTrigger("Break");
+        _animModel.SetTrigger("Break");
+        // model event ?
+    }
+    // used by breaker on toggle/flip
+    public void Power(bool value)
+    {
+        _isPower = value;
+        if (!_isBroken)
+        {
+            _anim.SetTrigger("Surge");
+            _animModel.SetTrigger("Surge");
+        }
+        else
+        {
+            _anim.SetTrigger("Spark");
+            _animModel.SetTrigger("Spark");
+        }
+    }
+    public bool IsBroken
+    {
+        get { return _isBroken; }
+    }
+}

@@ -1,0 +1,61 @@
+using UnityEngine;
+
+public class Waypoint : MonoBehaviour
+{
+    public float factor;    // brightness, etc
+    public float radius;
+    public float _time;
+    public float _timer;
+    public int flag;
+
+    void Awake()
+    {
+        _timer = 0;
+    }
+
+    void Update()
+    {
+        if (_timer > 0)
+            _timer -= Time.deltaTime;
+    }
+
+    // position + random deviation
+    public Vector3 PositionRandom()
+    {
+        // Debug.Log("no");
+        // get { return transform.position + transform.right * Random.Range(-radius, radius) + transform.forward * Random.Range(-radius, radius); }
+        _timer = _time;
+        return transform.position + transform.right * Random.Range(-radius, radius) + transform.forward * Random.Range(-radius, radius);
+    }
+
+    public Vector3 PositionDirection(Vector3 target)
+    {
+        return transform.position + (transform.position - target).normalized * radius;
+    }
+
+    // not working !?
+    public void Enable()
+    {
+        // Debug.Log(gameObject.name + "\t" + _timer);
+        _timer = 0;
+    }
+
+    public Vector3 Position
+    {
+        get { return transform.position; }
+    }
+
+    public bool IsEnabled
+    {
+        get { return _timer <= 0; }
+    }
+
+    void OnDrawGizmos()
+    {
+        if (IsEnabled)
+            Gizmos.color = Color.cyan;
+        else
+            Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, radius);
+    }
+}

@@ -1,0 +1,31 @@
+using UnityEngine;
+
+public class itemModel_bookCycle : base_item
+{
+    // private Animator _anim;
+    // public int _direction;
+    // private static int _pages;
+    public float _direction;  // turning direction
+    // public itemView_book _book;
+    public itemModel_book _book;
+
+    public override void Initialize()
+    {
+        base.Initialize();
+        // 
+        // _anim = GetComponent<Animator>();
+        // _anim.SetBool("IsOpen", _isOpen);
+    }
+    public override void Trigger_Model()
+    {
+        // _isOpen = !_isOpen;
+        // _anim.SetBool("IsOpen", _isOpen);
+        // _anim.SetInt("Page", _page);
+        // ???
+        // if (_book.IsOpen)
+        //     _book.PageTurn(-_direction);
+        // else
+        _book.PageCycle(_direction);
+
+    }
+}

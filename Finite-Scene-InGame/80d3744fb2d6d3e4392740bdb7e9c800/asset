@@ -1,0 +1,320 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.EventSystems;
+
+public class input_touch : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
+{
+    public static input_touch Instance;
+
+    // LEFT, RIGHT 
+    // TAP, HOLD, DOWN, UP 
+    public GameObject _cursorAim;
+    public GameObject _cursorMove;
+    public GameObject _cursorAimTrack;
+    public GameObject _cursorMoveTrack;
+    
+    // public RectTransform _cursorMoveIcon;
+    // // public RectTransform _cursorMoveSprintIcon;
+    // public RectTransform _cursorMoveMarkerIcon;
+
+    private bool _isActiveLeft;
+    private bool _isActiveRight;
+
+    private Vector2 _pressPositionLeft;
+    private Vector2 _pressPositionRight;
+    
+    private Vector2 _bufferPressPosition;           //...last pressed pointer position 
+
+    private Vector2 _pointerDragLeft;
+    private Vector2 _pointerDragRight;
+
+    private Vector2 _cachedPointerDrag;             //...???
+
+    private bool _chiralityBuffer;                  //...for if chirality change while active 
+
+    //public Canvas _canvas;      //...??? 
+    private float _uiScaleAdjust;                   //...???
+
+    void Awake()
+    {
+        Instance = this;
+
+        _chiralityBuffer = true;
+        //_uiScaleAdjust = 230f / 115;                //..???
+        // _uiScaleAdjust = 4;
+        _uiScaleAdjust = 1;
+        Reset();
+    }
+
+    void Update()
+    {
+        // If chirality change, reset 
+        if (_chiralityBuffer != game_variables.Instance.Chirality)
+        {
+            _chiralityBuffer = game_variables.Instance.Chirality;
+            Reset();
+        }
+        // disable appropriate cursors 
+        if (!_isActiveLeft)
+        {
+            if (!game_variables.Instance.Chirality && _cursorAim.activeSelf)
+                _cursorAim.SetActive(false);
+            if (game_variables.Instance.Chirality && _cursorMove.activeSelf)
+                _cursorMove.SetActive(false);
+        }
+        if (!_isActiveRight)
+        {
+            if (game_variables.Instance.Chirality && _cursorAim.activeSelf)
+                _cursorAim.SetActive(false);
+            if (!game_variables.Instance.Chirality && _cursorMove.activeSelf)
+                _cursorMove.SetActive(false);
+        }
+        // // Reposition appropriate track cursor if can't sprint 
+        // if (!base_player.Instance.CanSprint)
+        // {
+        //     if (game_variables.Instance.Chirality)
+        //     {
+        //         if ((_pointerDragLeft / game_variables.Instance.SensitivityMovement).magnitude > game_variables.Instance.SprintRatio)
+        //         {
+        //             _cachedPointerDrag = _pointerDragLeft;
+        //             _pointerDragLeft = _pointerDragLeft.normalized * game_variables.Instance.SprintRatio * game_variables.Instance.SensitivityMovement;
+        //         }
+        //     }
+        //     else
+        //     {
+        //         if ((_pointerDragRight / game_variables.Instance.SensitivityMovement).magnitude > game_variables.Instance.SprintRatio)
+        //         {
+        //             _cachedPointerDrag = _pointerDragRight;
+        //             _pointerDragRight = _pointerDragRight.normalized * game_variables.Instance.SprintRatio * game_variables.Instance.SensitivityMovement;
+        //         }
+        //     }
+        // }
+        // // Restore track pointer position 
+        // else if (_cachedPointerDrag.magnitude != 0)
+        // {
+        //     if (game_variables.Instance.Chirality)
+        //         _pointerDragLeft = _cachedPointerDrag;
+        //     else
+        //         _pointerDragRight = _cachedPointerDrag;
+        //     _cachedPointerDrag = Vector2.zero;
+        // }
+        // // Set appropriate cursor size and track position 
+        // if (_cursorMove.activeSelf)
+        // {
+        //     // set default cursor sizes 
+        //     //_cursorMoveIcon.sizeDelta = Vector2.one * game_variables.Instance.SensitivityMovement * _uiScaleAdjust * MoveRate * game_variables.Instance.SprintRatio;
+        //     // _cursorMoveIcon.sizeDelta = Vector2.one * game_variables.Instance.SensitivityMovement * 4 * game_variables.Instance.SprintRatio;
+        //     // _cursorMoveIcon.sizeDelta = Vector2.one * game_variables.Instance.SensitivityMovement * _uiScaleAdjust * game_variables.Instance.SprintRatio;
+        //     _cursorMoveIcon.sizeDelta = Vector2.one * game_variables.Instance.SensitivityMovement * 4f * game_variables.Instance.SprintRatio;
+        //     //_cursorMoveSprintIcon.sizeDelta = Vector2.one * game_variables.Instance.SensitivityMovement * _uiScaleAdjust * MoveRate * game_variables.Instance.SprintRatio;
+        //     // _cursorMoveSprintIcon.sizeDelta = Vector2.one * game_variables.Instance.SensitivityMovement * 4 * game_variables.Instance.SprintRatio;
+        //     // _cursorMoveSprintIcon.sizeDelta = Vector2.one * game_variables.Instance.SensitivityMovement * _uiScaleAdjust * game_variables.Instance.SprintRatio;
+        //     //_cursorMoveMarkerIcon.sizeDelta = Vector2.one * game_variables.Instance.SensitivityMovement * _uiScaleAdjust * Mathf.Lerp(1 - game_variables.Instance.SprintRatio, 1, MoveRate);
+        //     // _cursorMoveMarkerIcon.sizeDelta = Vector2.one * game_variables.Instance.SensitivityMovement * 4;
+        //     // _cursorMoveMarkerIcon.sizeDelta = Vector2.one * game_variables.Instance.SensitivityMovement * _uiScaleAdjust;
+        //     _cursorMoveMarkerIcon.sizeDelta = Vector2.one * game_variables.Instance.SensitivityMovement * 4f;
+        //     // // track move cursor by offset 
+        //     // if (game_variables.Instance.Chirality)
+        //     //     _cursorMoveTrack.transform.position = _pressPositionLeft + _pointerDragLeft;
+        //     // else
+        //     //     _cursorMoveTrack.transform.position = _pressPositionRight + _pointerDragRight;
+        //     // show stamina level 
+        //     // _cursorMoveSprintIcon.sizeDelta += Vector2.one * game_variables.Instance.SensitivityMovement * 4 * (1 - game_variables.Instance.SprintRatio) * base_player.Instance.StaminaRegenAmount;
+        //     // _cursorMoveSprintIcon.sizeDelta += Vector2.one * game_variables.Instance.SensitivityMovement * _uiScaleAdjust * (1 - game_variables.Instance.SprintRatio) * base_player.Instance.StaminaRegenAmount;
+        //     // _cursorMoveSprintIcon.sizeDelta += Vector2.one * game_variables.Instance.SensitivityMovement * _uiScaleAdjust * (1 - game_variables.Instance.SprintRatio) * base_player.Instance.Stamina;
+        // }
+    }
+
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        // store press position in buffer 
+        _bufferPressPosition = eventData.position;
+
+        if (eventData.pressPosition.x < Screen.width / 2)
+        {
+            if (!_isActiveLeft)
+            {
+                _pressPositionLeft = eventData.pressPosition;
+                _isActiveLeft = true;
+            }
+        }
+        else if (!_isActiveRight)
+        {
+            _pressPositionRight = eventData.pressPosition;
+            _isActiveRight = true;
+        }
+    }
+
+    // handles MOVE_START 
+    public void OnDrag(PointerEventData eventData)
+    {
+        // if active and 'left' pointer 
+        if (_isActiveLeft && eventData.pressPosition == _pressPositionLeft)
+        {
+            // display appropriate cursor 
+            if (!game_variables.Instance.Chirality && !_cursorAim.activeSelf)
+            {
+                _cursorAim.SetActive(true);
+                _cursorAim.transform.position = _pressPositionLeft;
+            }
+            else if (game_variables.Instance.Chirality && !_cursorMove.activeSelf)
+            {
+                _cursorMove.SetActive(true);
+                _cursorMove.transform.position = _pressPositionLeft;
+            }
+            // track appropriate cursor to pointer 
+            if (!game_variables.Instance.Chirality && _cursorAim.activeSelf)
+            {
+                // Calculate simple pointer drag
+                _pointerDragLeft = eventData.position - eventData.pressPosition;
+                _cursorAimTrack.transform.position = eventData.position;
+            }
+            else if (game_variables.Instance.Chirality && _cursorMove.activeSelf)
+            {
+                // Calculate capped pointer drag 
+                // float tempX = Mathf.Clamp(eventData.position.x - eventData.pressPosition.x, -game_variables.Instance.SensitivityMovement, game_variables.Instance.SensitivityMovement);
+                // float tempY = Mathf.Clamp(eventData.position.y - eventData.pressPosition.y, -game_variables.Instance.SensitivityMovement, game_variables.Instance.SensitivityMovement);
+                // _pointerDragLeft = new Vector2(tempX, tempY);
+
+                _pointerDragLeft = eventData.position - eventData.pressPosition;
+                _cursorMoveTrack.transform.position = eventData.position;
+                
+                // // get
+                // _pointerDragLeft = (eventData.position - eventData.pressPosition) / game_variables.Instance.SensitivityMovement;
+                // // scale
+                // _pointerDragLeft = _pointerDragLeft.magnitude > 1 ? (eventData.position - eventData.pressPosition) / _pointerDragLeft.magnitude : _pointerDragLeft;
+                // // apply
+                // _cursorMoveTrack.transform.position = eventData.pressPosition + _pointerDragLeft;
+                
+                // _pointerDragLeft = (eventData.position - eventData.pressPosition) / game_variables.Instance.SensitivityMovement;
+                // _pointerDragLeft = (_pointerDragLeft.magnitude > 1) ? _pointerDragLeft.normalized : _pointerDragLeft;
+                // _pointerDragLeft *= game_variables.Instance.SensitivityMovement;
+            }
+            if (!player_motor.Instance.IsMoving && game_variables.Instance.Chirality)
+                input_controller.Instance.RegisterAction(input_controller.ActionType.MOVE_START);
+        }
+        // if active and 'right' pointer 
+        if (_isActiveRight && eventData.pressPosition == _pressPositionRight)
+        {
+            // display appropriate cursor 
+            if (game_variables.Instance.Chirality && !_cursorAim.activeSelf)
+            {
+                _cursorAim.SetActive(true);
+                _cursorAim.transform.position = _pressPositionRight;
+            }
+            else if (!game_variables.Instance.Chirality && !_cursorMove.activeSelf)
+            {
+                _cursorMove.SetActive(true);
+                _cursorMove.transform.position = _pressPositionRight;
+            }
+            // track appropriate cursor to pointer 
+            if (game_variables.Instance.Chirality && _cursorAim.activeSelf)
+            {
+                // Calculate simple pointer drag 
+                _pointerDragRight = eventData.position - eventData.pressPosition;
+                _cursorAimTrack.transform.position = eventData.position;
+            }
+            else if (!game_variables.Instance.Chirality && _cursorMove.activeSelf)
+            {
+                // Calculate capped pointer drag 
+                _pointerDragRight = eventData.position - eventData.pressPosition;
+                _cursorMoveTrack.transform.position = eventData.position;
+                
+                // // get
+                // _pointerDragRight = (eventData.position - eventData.pressPosition) / game_variables.Instance.SensitivityMovement;
+                // // scale
+                // _pointerDragRight = _pointerDragRight.magnitude > 1 ? (eventData.position - eventData.pressPosition) / _pointerDragRight.magnitude : _pointerDragRight;
+                // // apply
+                // _cursorMoveTrack.transform.position = eventData.pressPosition + _pointerDragRight;
+                
+                // _pointerDragRight = (eventData.position - eventData.pressPosition) / game_variables.Instance.SensitivityMovement;
+                // _pointerDragRight = (_pointerDragRight.magnitude > 1) ? _pointerDragRight.normalized : _pointerDragRight;
+                // _pointerDragRight *= game_variables.Instance.SensitivityMovement;
+            }
+            if (!player_motor.Instance.IsMoving && !game_variables.Instance.Chirality)
+                input_controller.Instance.RegisterAction(input_controller.ActionType.MOVE_START);
+        }
+    }
+
+    // handles INTERACT, MOVE_END 
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        // check for tap 
+        if (eventData.position == _bufferPressPosition)
+        {
+            input_controller.Instance.RegisterAction(input_controller.ActionType.INTERACT);
+            _bufferPressPosition = Vector2.zero;
+        }
+        // if active and 'left' pointer 
+        if (_isActiveLeft && eventData.pressPosition == _pressPositionLeft)
+        {
+            _isActiveLeft = false;
+            if (game_variables.Instance.Chirality)
+            {
+                input_controller.Instance.RegisterAction(input_controller.ActionType.MOVE_END);
+                _cachedPointerDrag = Vector2.zero;
+            }
+            _pointerDragLeft = Vector2.zero;
+        }
+        // if active and 'right' pointer 
+        else if (_isActiveRight && eventData.pressPosition == _pressPositionRight)
+        {
+            _isActiveRight = false;
+            if (!game_variables.Instance.Chirality)
+            {
+                input_controller.Instance.RegisterAction(input_controller.ActionType.MOVE_END);
+                _cachedPointerDrag = Vector2.zero;
+            }
+            _pointerDragRight = Vector2.zero;
+        }
+    }
+
+    public void Reset()
+    {
+        _cursorAim.SetActive(false);
+        _cursorMove.SetActive(false);
+        _isActiveLeft = false;
+        _isActiveRight = false;
+        _pressPositionLeft = Vector2.left;
+        _pressPositionRight = Vector2.left;
+        _pointerDragLeft = Vector2.zero;
+        _pointerDragRight = Vector2.zero;
+    }
+
+    #region Properties
+
+    public Vector2 MovePointer
+    {
+        get { if (game_variables.Instance.Chirality) return _pointerDragLeft; else return _pointerDragRight; }
+    }
+
+    public Vector2 CameraPointer
+    {
+        get { if (!game_variables.Instance.Chirality) return _pointerDragLeft; else return _pointerDragRight; }
+    }
+
+    public bool IsMove
+    {
+        get { return ((_isActiveLeft && game_variables.Instance.Chirality) || (_isActiveRight && !game_variables.Instance.Chirality)); }
+    }
+
+    public bool IsFreeCam
+    {
+        get { return ((_isActiveLeft && !game_variables.Instance.Chirality) || (_isActiveRight && game_variables.Instance.Chirality)); }
+    }
+
+    // cached press position 
+    public Vector2 BufferPositionTap
+    {
+        get { return _bufferPressPosition; }
+    }
+
+    // // returns move cursor drag amount [not considering sprint] 
+    // public float MoveRate
+    // {
+    //     get { if (game_variables.Instance.Chirality) return Mathf.Clamp01(Mathf.Abs((_pointerDragLeft / (game_variables.Instance.SensitivityMovement * game_variables.Instance.SprintRatio)).magnitude)); else return Mathf.Clamp01(Mathf.Abs((_pointerDragRight / (game_variables.Instance.SensitivityMovement * game_variables.Instance.SprintRatio)).magnitude)); }
+    // }
+
+    #endregion
+}

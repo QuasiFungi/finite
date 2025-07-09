@@ -1,0 +1,55 @@
+using UnityEngine;
+
+public class itemInteractive_toggle : base_item
+{
+    private Animator _anim;
+    public itemDialogue_toggle _cascade;
+    public bool _isOn;    // cache ?
+    public bool _dialogue;
+    public string _dialogueOnCascade;
+    public string _dialogueOn;
+    public string _dialogueOffCascade;
+    public string _dialogueOff;
+    public override void Initialize()
+    {
+        // 
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        // ? save file
+        // _isOn = 
+    }
+    public override void Trigger_Interaction()
+    {
+        // toggle
+        _isOn = !_isOn;
+        // ??? trigger or bool ???
+        // _anim.SetTrigger("Toggle");
+        _anim.SetBool("IsOpen", _isOn);
+        // trigger dialogue menu 
+        if (_dialogue)
+        {
+            manager_ui.Instance.Trigger_DisplayMessage();
+            // now on
+            if (_isOn)
+            {
+                // exists, already powered
+                if (_cascade != null && _cascade.IsOn)
+                    display_message.Instance.SetMessage(_dialogueOnCascade);
+                else
+                    display_message.Instance.SetMessage(_dialogueOn);
+            }
+            // now off
+            else
+            {
+                // exists, already off
+                if (_cascade != null && !_cascade.IsOn)
+                    display_message.Instance.SetMessage(_dialogueOffCascade);
+                else
+                    display_message.Instance.SetMessage(_dialogueOff);
+            }
+        }
+        // 
+        if (_cascade != null)
+            _cascade.Toggle();
+    }
+}

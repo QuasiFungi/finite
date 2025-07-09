@@ -1,0 +1,186 @@
+using System.Collections.Generic;
+using UnityEngine;
+using Panda;
+
+public class entity_test : base_entity
+{
+    // public state_machine _stateMachine => GetComponent<state_machine>();
+    // void Awake()
+    // {
+    //     Initialize();
+    // }
+    // private void Initialize()
+    // {
+    //     state_wander current = new state_wander(this);
+    //     var states =  new Dictionary<System.Type, state_base>()
+    //     {
+    //         // { typeof(state_wander), new state_wander(this) }
+    //         { typeof(state_wander), current },
+    //     };
+    //     // GetComponent<state_machine>().Initialize(states, current);
+    // }
+
+    [Task]
+    public void SearchForTarget()
+    {
+        // anemonie
+        foreach (Transform target in _targets)
+        {
+            // in view radius
+            // if ((transform.position - player_motor.Instance.Position).magnitude < game_variables.Instance.CameraFar)
+            // far + buffer
+            if (Vector3.Distance(transform.position, target.position) < game_variables.Instance.CameraFar + 10f)
+            {
+                // _state = State.IDLE;
+                // return "Recite";
+                // SetState("Recite");
+                // _reciteTimer = _reciteTime;
+                // return;
+                // target found
+                Task.current.Fail();
+                // ???
+                return;
+            }
+        }
+        // ??? search in progress ?
+        Task.current.Succeed();
+    }
+    
+    [Task]
+    public void EntityAtMove(float distance)
+    {
+        // ???
+        // if (Vector3.Distance(transform.position, _move.position) < _distanceWander)
+        if (Vector3.Distance(transform.position, _move.position) < distance)
+            // reached
+            Task.current.Succeed();
+        else
+            // enroute
+            Task.current.Fail();
+    }
+    
+    [Task]
+    public void SetMoveToWaypoint()
+    {
+        _move.position = GetWaypointRandom();
+        // // ??? when set move
+        // _stateTimer = 0;
+        // always ?
+        // Task.current.Succeed();
+        // no response ? mute ?
+    }
+    
+    [Task]
+    public void EntityToMove()
+    {
+        if (_agent == null)
+            Task.current.Fail();
+        else
+        {
+            _agent.SetDestination(_move.position);
+            // // always ?
+            Task.current.Succeed();
+        }
+    }
+    
+    [Task]
+    public void SetMoveToPosition()
+    {
+        _move.position = transform.position;
+        // // ??? when set move
+        // _stateTimer = 0;
+        // always ?
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void SensorAny()
+    {
+        // check sensors [priority ?]
+        if (Sensor_Vision() || Sensor_Audio())
+            Task.current.Fail();
+        else
+            // fail ?
+            Task.current.Succeed();
+    }
+
+    [Task]
+    public bool IsBored
+    {
+        // ???
+        // get { return _stateTimer > 5f; }
+        // get { return _stateTimer > _attentionTime; }
+        get { return _sensorTimer > _attentionTime; }
+    }
+
+    [Task]
+    public void SensorVision()
+    {
+        if (Sensor_Vision())
+            // detected
+            Task.current.Fail();
+        else
+            // searching
+            Task.current.Succeed();
+    }
+    
+    [Task]
+    public void SetMoveToVision()
+    {
+        _move.position = _positionVision;
+        // // ??? when set move
+        // _stateTimer = 0;
+        // always ?
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public bool IsAware
+    {
+        // get { return _awareTimer > _awareTime; }
+        get { return _awareTimer > 0; }
+    }
+
+    [Task]
+    public void SensorAudio()
+    {
+        if (Sensor_Audio())
+            // detected
+            Task.current.Fail();
+        else
+            // searching
+            Task.current.Succeed();
+    }
+    
+    [Task]
+    public void SetMoveToAudio()
+    {
+        _move.position = _positionAudio;
+        // // ??? when set move
+        // _stateTimer = 0;
+        // always ?
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void EntityAtTarget(float distance)
+    {
+        if (_target == null)
+            Task.current.Fail();
+        else
+        {
+            // kochi
+            if (Vector3.Distance(transform.position, _target.position) < distance)
+                Task.current.Succeed();
+            // nein
+            else
+                Task.current.Fail();
+        }
+    }
+
+    [Task]
+    public bool IsAlive
+    {
+        get { return _healthInst > 0; }
+    }
+}

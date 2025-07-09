@@ -1,0 +1,79 @@
+using UnityEngine;
+
+public class itemView_padLock : base_item
+{
+    private Animator _anim;
+    public itemInteractive_chain _chain;
+    private int _dial;
+    private int[] _check;
+    private int _index;
+    private int _direction;
+    public override void Initialize()
+    {
+        // 
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        // 
+        _dial = 0;
+        _check = new int [3];
+        _check[0] = 1;
+        _check[1] = 2;
+        _check[2] = 3;
+        // check start index
+        _index = 0;
+        _direction = 0;
+    }
+    // ???
+    // public override void Trigger_Passive()
+    // {
+    //     // poof
+    //     GetComponent<MeshRenderer>().enabled = false;
+    //     GetComponent<BoxCollider>().enabled = false;
+    // }
+    public override string DebugMessage()
+    {
+        return _index + " " + _dial + " " + _direction;
+    }
+    public void Tick(int direction)
+    {
+        // - animate
+        // blend tree ?
+        // _anim.SetInteger("Dial", _dial);
+
+        // direction change
+        if (_direction != direction)
+        {
+            _direction = direction;
+            // - tally
+            if (_check[_index] == _dial)
+                Tock();
+            else
+                Reset();
+        }
+        // - tick
+        _dial += direction;
+        // l00p
+        if (_dial < 0)
+            _dial = 9;
+        else if (_dial > 9)
+            _dial = 0;
+    }
+    // ???
+    private void Tock()
+    {
+        _index++;
+        // shift to start ?
+        if (_index > 2)
+        {
+            // unlock
+            _chain.Unlock();
+            Poof();
+        }
+    }
+    // zaanen~
+    private void Reset()
+    {
+        // full reset
+        _index = 0;
+    }
+}

@@ -1,0 +1,199 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+
+public class tutorial : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
+{
+    private manager_uiMain _managerUIMain;
+
+    public Image _background;
+    public Image _skipIcon;
+    public Image _skipIconProgress;
+    public Image _foreground;
+    public GameObject _progressIcon;
+    public GameObject _slide1;
+    public GameObject _slide2;
+    public GameObject _slide3;
+
+    private float _fadeTime;
+
+    private float _slideTime;
+    private float _slideTimer;
+    private int _slideCount;
+
+    private float _skipTime;
+    private float _skipTimer;
+    private float _skipTimeRate;
+
+    private bool _isActive;
+    private Vector2 _bufferPressPosition;       //last pressed pointer position 
+
+    // Misc 
+    private float _skipIconAlpha;
+
+    void Awake()
+    {
+        _fadeTime = 1f;
+
+        _slideTime = 6;
+        _slideCount = -1;
+
+        _skipTime = 3;
+        _skipTimer = 0;
+        _skipTimeRate = 2;
+
+        _skipIconProgress.fillAmount = 0;
+    }
+
+    void OnEnable()
+    {
+        _slideTimer = _fadeTime;
+        _managerUIMain = transform.GetComponentInParent<manager_uiMain>();
+        _foreground.color = new Color(0, 0, 0, 0);
+        _background.color = new Color(0, 0, 0, 0);
+        _skipIcon.color = new Color(1, 1, 1, 0);
+        _foreground.raycastTarget = true;
+        _background.raycastTarget = true;
+        _slide1.SetActive(false);
+        _slide2.SetActive(false);
+        _slide3.SetActive(false);
+    }
+
+    void Update()
+    {
+        if (_slideCount < 0)
+        {
+            // Fade IN 
+            Color temp = new Color(0, 0, 0, Mathf.Lerp(1, 0, _slideTimer / _fadeTime));
+            _foreground.color = temp;
+            _background.color = temp;
+
+            _slideTimer -= Time.deltaTime;
+            if (_slideTimer < 0)
+            {
+                _slideCount++;
+                _slideTimer = _slideTime;
+                _background.color = Color.black;    // ??? 
+            }
+        }
+        else if (_slideCount < 3)
+        {
+            switch (_slideCount)
+            {
+                case 0:
+                    if (!_slide1.activeSelf)
+                        _slide1.SetActive(true);
+                    break;
+                case 1:
+                    if (_slide1.activeSelf)
+                        _slide1.SetActive(false);
+                    if (!_slide2.activeSelf)
+                        _slide2.SetActive(true);
+                    break;
+                case 2:
+                    if (_slide1.activeSelf)
+                        _slide1.SetActive(false);
+                    if (_slide2.activeSelf)
+                        _slide2.SetActive(false);
+                    if (!_slide3.activeSelf)
+                        _slide3.SetActive(true);
+                    break;
+            }
+            if (_slideTimer >= _slideTime - _fadeTime)
+                // Fade OUT 
+                _foreground.color = new Color(0, 0, 0, Mathf.Lerp(1, 0, (_slideTime - _slideTimer) / _fadeTime));
+            else if (_slideTimer <= _fadeTime)
+                // Fade IN 
+                _foreground.color = new Color(0, 0, 0, Mathf.Lerp(1, 0, _slideTimer / _fadeTime));
+            _slideTimer -= Time.deltaTime;
+            if (_slideTimer < 0)
+            {
+                _slideCount++;
+                if (_slideCount < 3)
+                {
+                    _slideTimer = _slideTime;
+                    _foreground.color = Color.black;    // ??? 
+                    _background.color = Color.black;    // ??? 
+                }
+                else
+                {
+                    _slideTimer = _fadeTime;
+                    _foreground.raycastTarget = false;
+                    _background.raycastTarget = false;
+                    _slide1.SetActive(false);
+                    _slide2.SetActive(false);
+                    _slide3.SetActive(false);
+                    _managerUIMain.HideAll();
+                    _skipIconAlpha = _skipIcon.color.a;
+                    _foreground.color = Color.black;    // ??? 
+                    _background.color = Color.black;    // ??? 
+                }
+            }
+
+            _skipIcon.color = new Color(1, 1, 1, Mathf.Lerp(0, 0.8f, _skipTimer / _skipTime));
+            _skipIconProgress.fillAmount = Mathf.Lerp(0, 1, _skipTimer / _skipTime);
+            if (_isActive)
+            {
+                _skipTimer += Time.deltaTime * _skipTimeRate;
+                if (_skipTimer > _skipTime)
+                {
+                    _slideCount = 4;
+                    _slideTimer = _fadeTime;
+                    _foreground.raycastTarget = false;
+                    _background.raycastTarget = false;
+                    _slide1.SetActive(false);
+                    _slide2.SetActive(false);
+                    _slide3.SetActive(false);
+                    _managerUIMain.HideAll();
+                    _skipIcon.color = new Color(1, 1, 1, 0.8f); //correction 
+                    _skipIconProgress.fillAmount = 1;           //correction 
+                    _skipIconAlpha = _skipIcon.color.a;
+                }
+            }
+            else if (_skipTimer > 0)
+                _skipTimer -= Time.deltaTime;
+        }
+        else if (game_master.Instance.LoadStatus)
+        {
+            // Fade OUT 
+            Color temp = new Color(0, 0, 0, Mathf.Lerp(0, 1, _slideTimer / _fadeTime));
+            _foreground.color = temp;
+            _background.color = temp;
+            Color temp2 = new Color(1, 1, 1, Mathf.Lerp(0, _skipIconAlpha, _slideTimer / _fadeTime));
+            _skipIcon.color = temp2;
+            _skipIconProgress.color = temp2;
+            
+            _slideTimer -= Time.deltaTime;
+            if (_slideTimer < 0)
+                _managerUIMain.Destroy();
+        }
+        else
+        {
+            // ??? 
+        }
+    }
+
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        if (!_isActive)
+        {
+            // store press position in buffer 
+            _bufferPressPosition = eventData.position;
+            _isActive = true;
+            if (!_progressIcon.activeSelf)
+                _progressIcon.SetActive(true);
+        }
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        // check if active 
+        if (eventData.pressPosition == _bufferPressPosition)
+        {
+            _isActive = false;
+            _bufferPressPosition = Vector2.zero;
+        }
+    }
+}

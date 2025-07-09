@@ -1,0 +1,52 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class testLog : MonoBehaviour
+{
+    public static testLog Instance;
+    public Text log;
+    protected class Message
+    {
+        public string value;
+        public float timer;
+        public Message(string value, float duration)
+        {
+            this.value = value;
+            this.timer = duration;
+        }
+    }
+    private List<Message> _messages;
+    void Awake()
+    {
+        Instance = this;
+        // 
+        _messages = new List<Message>();
+    }
+    void Update()
+    {
+        // clear
+        log.text = "";
+        // populate
+        List<Message> toRemove = new List<Message>();
+        foreach (Message message in _messages)
+        {
+            message.timer -= Time.deltaTime;
+            // display
+            log.text += message.value;
+            // filter
+            if (message.timer <= 0)
+                toRemove.Add(message);
+        }
+        foreach (Message message in toRemove)
+            _messages.Remove(message);
+    }
+    public void AddMessage(string message, float duration = 0)
+    {
+        // reject
+        if (message == null || duration < 0)
+            return;
+        _messages.Add(new Message("\n" + message, duration));
+    }
+}

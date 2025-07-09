@@ -1,0 +1,18 @@
+using UnityEngine;
+
+public class itemInteractive_ladder : base_item
+{
+    public Transform anchor;
+    public override void Trigger_Interaction()
+    {
+        // 
+        if (anchor != null)
+            player_motor.Instance.SnapToLadder(anchor.position);
+        else
+        {
+            // trigger dialogue menu 
+            manager_ui.Instance.Trigger_DisplayMessage();
+            display_message.Instance.SetMessage("itemInteractive_ladder:no anchor assigned");
+        }
+    }
+}

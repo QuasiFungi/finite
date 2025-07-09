@@ -1,0 +1,31 @@
+using UnityEngine;
+
+public class test_audioSphere : MonoBehaviour
+{
+    private float _timer = 0.1f;
+    private float _magnitude;
+
+    void Update()
+    {
+        // // safety ?
+        // if (_timer >= 0)
+        // {
+        //     transform.localScale = Vector3.one * Mathf.Lerp(_magnitude, 0, _timer / _time);
+        //     _timer -= Time.deltaTime;
+        //     if (_timer <= 0)
+        //         Destroy(gameObject);
+        // }
+        // else
+        //     transform.localScale = Vector3.zero;
+        _timer -= Time.deltaTime;
+        if (_timer <= 0)
+            Destroy(gameObject);
+    }
+
+    public void Initialize(float magnitude)
+    {
+        // radius to diameter
+        _magnitude = magnitude * 2f;
+        transform.localScale = Vector3.one * _magnitude;
+    }
+}

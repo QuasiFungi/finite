@@ -1,0 +1,175 @@
+using UnityEngine;
+using Panda;
+
+public class entity_beast : entity_ai
+{
+    public AudioClip[] _clipsAudio;
+
+    [Task]
+    public void IsNecklace()
+    {
+        if (base_player.Instance.ItemEquipped != null && (base_player.Instance.ItemEquipped.Slug == "necklaceHunter" || base_player.Instance.ItemEquipped.Slug == "key_master"))
+            Task.current.Succeed();
+        else
+            Task.current.Fail();
+    }
+
+    [Task]
+    public void Gib()
+    {
+        if (base_player.Instance.ItemEquipped != null && (base_player.Instance.ItemEquipped.Slug == "necklaceHunter" || base_player.Instance.ItemEquipped.Slug == "key_master"))
+        {
+            // 
+            base_player.Instance.Trigger_ItemRemove();
+            // 
+            Task.current.Succeed();
+        }
+        else
+            Task.current.Fail();
+    }
+
+    [Task]
+    public void TestAudio(int clip)
+    {
+        if (clip > _clipsAudio.Length)
+            // 
+            Task.current.Fail();
+        else
+        {
+            // ???
+            _audio.clip = _clipsAudio[clip];
+            _audio.loop = false;
+            _audio.Play();
+            // 
+            Task.current.Succeed();
+        }
+    }
+
+    // [Task]
+    // public void AudioHowl()
+    // {
+    //     // ???
+    //     _audio.clip = _clipsAudio[0];
+    //     _audio.loop = false;
+    //     _audio.Play();
+    //     // 
+    //     Task.current.Succeed();
+    // }
+
+    // [Task]
+    // public void AudioLash()
+    // {
+    //     // ???
+    //     _audio.clip = _clipsAudio[1];
+    //     _audio.loop = false;
+    //     _audio.Play();
+    //     // 
+    //     Task.current.Succeed();
+    // }
+
+    // [Task]
+    // public void AudioCharge()
+    // {
+    //     // ???
+    //     _audio.clip = _clipsAudio[2];
+    //     _audio.loop = false;
+    //     _audio.Play();
+    //     // 
+    //     Task.current.Succeed();
+    // }
+
+    // [Task]
+    // public void AudioGrowl()
+    // {
+    //     // ???
+    //     _audio.clip = _clipsAudio[3];
+    //     _audio.loop = false;
+    //     _audio.Play();
+    //     // 
+    //     Task.current.Succeed();
+    // }
+
+    // [Task]
+    // public void AudioWalk()
+    // {
+    //     // ???
+    //     _audio.clip = _clipsAudio[4];
+    //     _audio.loop = true;
+    //     _audio.Play();
+    //     // 
+    //     Task.current.Succeed();
+    // }
+
+    // [Task]
+    // public void AudioRun()
+    // {
+    //     // ???
+    //     _audio.clip = _clipsAudio[5];
+    //     _audio.loop = true;
+    //     _audio.Play();
+    //     // 
+    //     Task.current.Succeed();
+    // }
+
+    [Task]
+    public void TestAnimate(int clip)
+    {
+        // if (_anim == null)
+        //     // 
+        //     Task.current.Fail();
+        // else
+        // {
+            // 
+            // _anim.Play(clip);
+            // 
+        Task.current.Succeed();
+        // }
+    }
+
+    [Task]
+    public void TestEnableTriggerDamage(int id, float value)
+    {
+        // 
+        if (id < _hitTrigger.Count)
+        {
+            _hitTrigger[id].SetActive(true);
+            _hitTrigger[id].GetComponent<trigger_damage>().SetDamage(value);
+            // 
+            Task.current.Succeed();
+        }
+        else
+            // 
+            Task.current.Fail();
+
+    }
+
+    [Task]
+    public void TestDisableTrigger(int id)
+    {
+        // 
+        if (id < _hitTrigger.Count)
+        {
+            _hitTrigger[id].SetActive(true);
+            // 
+            Task.current.Succeed();
+        }
+        else
+            // 
+            Task.current.Fail();
+
+    }
+
+    // [Task]
+    // public void TestDamage(float value)
+    // {
+    //     if (_target != null)
+    //     {
+    //         if (_target.gameObject.layer == game_variables.Instance.LayerPlayer)
+    //             base_player.Instance.DrainHealth(value);
+    //         else if (_target.gameObject.layer == game_variables.Instance.LayerEntity)
+    //             _target.GetComponent<base_entity>().Register_Damage(value);
+    //     }
+    //     // 
+    //     Task.current.Succeed();
+    // }
+}

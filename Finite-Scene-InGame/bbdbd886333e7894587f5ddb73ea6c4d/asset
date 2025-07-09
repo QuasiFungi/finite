@@ -1,0 +1,723 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using System;
+
+public class player_motor : MonoBehaviour
+{
+    public static player_motor Instance;
+    public CharacterController _characterController;
+    private Rigidbody _rigidbody;
+    private CapsuleCollider _collider;
+
+    public enum MotorState
+    {
+        NULL, 
+        MOVE, 
+        // CLING, 
+        // SUBMERGED, 
+    }
+    private MotorState state_current;
+
+    // Gravity Variables 
+    public float _gravity;              //...normal gravitational force
+    public float _gravitySwim;          //...
+    public float _terminalVelocity;     //...maximum velocity
+    public float _terminalVelocitySwim; //...
+    // public float _terminalVelocityFall; //...maximum velocity freefall
+    // public float _terminalVelocityMove; //...maximum velocity move
+
+    // Movement Variables 
+    public float _speedMove;           //...movement speed in State MOVE 
+    private Vector3 RotationVector;
+    private Vector3 MoveVector;
+    private float _rotationCenter;
+    private int _flagRecordRotation;
+
+    //private int _idStateCurrent;        //...rng id of currently processing state 
+    private float _cachedAbsoluteVerticalVelocity;      //...stores last non zero player vertical velocity 
+    // private float _cachedAbsoluteHorizontalVelocity;    //...stores last non zero player horizontal velocity 
+    private bool _isHorizontalDisplacement;     //...yeah
+
+    private Vector2 _positionLast;
+    
+    // private float _clingTime;                           //...time at which cling was triggered [something not grounded something] 
+
+    private bool _hasCycled;                            //...has been in current state for at least one cycle 
+
+    //private bool _isSprinting;              //...??? 
+    private bool _isClimb;
+    // public float _waterSpeedReduction;      // scale velocity by factor ?
+    public float _damagingVelocity;         // oof level velocity
+
+    public float test_loudness;
+    public GameObject testAudioSphere;
+    public bool testShowAudio;
+
+    // private bool _inWater;  // use int flag instead ?
+    // private float _depth;       // current depth from water surface
+    // private float _depthMax;    // depth that initiates swim ?
+    private bool _isSwim;
+
+    private List<Vector3> _activeForces;
+
+    public float _friction;
+    public float _drag;
+
+    private Vector3 _motion;
+
+    void Awake()
+    {
+        Instance = this;
+        // _characterController = GetComponent<CharacterController>();
+        _rigidbody = GetComponent<Rigidbody>();
+        _collider = GetComponent<CapsuleCollider>();
+
+        // // Initialize Constants 
+        // _gravity = 23f;
+        // _terminalVelocity = 40f;
+        // _speedMove = 10f;
+
+        // Initialize Variables 
+        state_current = MotorState.NULL;
+        RotationVector = Vector3.zero;
+        MoveVector = Vector3.zero;
+        _rotationCenter = 0;
+        _flagRecordRotation = -1;
+        //_idStateCurrent = int.MaxValue;
+        _isHorizontalDisplacement = false;
+        // ???
+        _positionLast = new Vector2(transform.position.x, transform.position.z);
+        _hasCycled = false;
+
+        //_isSprinting = false;
+        _isClimb = false;
+        // _inWater = false;
+        // _depth = 0;
+        // _depthMax = 1.5f;   // camera height ?
+        _isSwim = false;
+        // _isSwim = true;
+
+        _activeForces = new List<Vector3>();
+        
+        _motion = Vector3.zero;
+    }
+
+    void OnDrawGizmos()
+    {
+        // entity forward
+        Gizmos.color = Color.blue;
+        Gizmos.DrawRay(transform.position, transform.forward * 10f);
+        // noise sphere
+        Gizmos.color = new Color32(255, 255, 255, 125);
+        if (state_current == MotorState.MOVE && !game_variables.Instance.FreeCamera && testShowAudio)
+            // Gizmos.DrawSphere(transform.position, MoveVector.magnitude * test_loudness);
+            Gizmos.DrawSphere(transform.position, _motion.magnitude * test_loudness);
+    }
+
+    void Update()
+    {
+        // cache current rotation
+        if (input_controller.Instance.IsFreeCamera)
+        {
+            // begin camera input
+            if (_flagRecordRotation != 0)
+            {
+                _rotationCenter = player_camera.Instance.transform.eulerAngles.y;
+                _flagRecordRotation = 0;
+            }
+        }
+        else
+        {
+            // release camera input
+            if (_flagRecordRotation != 1)
+            {
+                _rotationCenter = player_camera.Instance.transform.eulerAngles.y;
+                _flagRecordRotation = 1;
+            }
+        }
+        // measure depth ?
+        // cast to/up/water ?
+        // conditional return/cast fro/down/player ?
+
+        // GetCurrentStateMotion();
+
+        // // only when alive 
+        // if (base_player.Instance.IsAlive)
+        //     ProcessCurrentState();
+        // check if set to hidden layer? else clip fall on death
+        if (base_player.Instance.IsAlive)
+            ProcessMotion();
+
+        // // clear cached velocity ?
+        // if (_isClimb)
+        //     _cachedAbsoluteVerticalVelocity = 0;
+        // // else if (MoveVector.y != -1)
+        // // cache last non zero vertical velocity [velocity just before impact] [when not clinging ?] 
+        // if (MoveVector.y != -1)
+        //     _cachedAbsoluteVerticalVelocity = Mathf.Abs(MoveVector.y / _terminalVelocity);
+        
+        // clear cached velocity ?
+        if (_isClimb)
+            _cachedAbsoluteVerticalVelocity = 0;
+        // cache normalized vertical velocity
+        else
+            // _cachedAbsoluteVerticalVelocity = Mathf.Abs(MoveVector.y / _terminalVelocityFall);
+            _cachedAbsoluteVerticalVelocity = Mathf.Abs(MoveVector.y / _terminalVelocity);
+        // Debug.Log(_cachedAbsoluteVerticalVelocity);
+        
+        // // cache last non zero horizontal velocity [velocity just before sprint end?]
+        // if (Mathf.Abs(MoveVector.x) + Mathf.Abs(MoveVector.z) < 0.01f)
+        // // if (Mathf.Abs(MoveVector.x) + Mathf.Abs(MoveVector.z) < 0f)
+        //     // _cachedAbsoluteHorizontalVelocity = 0;
+        //     _isHorizontalDisplacement = false;
+        // else
+        // {
+        Vector2 pos = new Vector2(transform.position.x, transform.position.z);
+        // !?
+        // _cachedAbsoluteHorizontalVelocity = Mathf.Abs(pos.magnitude - _positionLast.magnitude);
+        // _cachedAbsoluteHorizontalVelocity = Vector3.Distance(pos, _positionLast) / (MoveVector.magnitude * Time.deltaTime);
+        // _cachedAbsoluteHorizontalVelocity = 1f;
+        _isHorizontalDisplacement = Vector3.Distance(pos, _positionLast) > 0;
+        _positionLast = pos;
+        // }
+
+        // mark end of update cycle
+        _hasCycled = true;
+    }
+
+    private void ProcessMotion()
+    {
+        // // * testing [world space]
+        // _activeForces.Add(Vector3.forward * 5f);
+        // testLog.Instance.AddMessage(state_current + "\t" + _isClimb + "\t" + _isSwim);
+        // 
+        // prep local
+        _motion = Vector3.zero;
+        // - input
+        Vector2 temp = Vector2.zero;
+        if (_isClimb)
+            temp = new Vector2(0, input_controller.Instance.MovementV);
+        else
+            temp = new Vector2(input_controller.Instance.MovementH, input_controller.Instance.MovementV);
+        // ye
+        if (!game_variables.Instance.FreeCamera)
+        {
+            // tired
+            if (!base_player.Instance.CanSprint)
+                // exhaustion nerf
+                temp = temp.magnitude > game_variables.Instance.SprintRatio ? temp.normalized * game_variables.Instance.SprintRatio : temp;
+            else
+                // normalize ?
+                temp = temp.magnitude > 1 ? temp.normalized : temp;
+        }
+        // climb
+        if (_isClimb)
+            _motion = new Vector3(0, temp.y, 0);
+        // fly, swim
+        else
+            _motion = new Vector3(temp.x, 0, temp.y);
+        // camera relative motion ?
+        if (game_variables.Instance.FreeCamera || _isSwim)
+            _motion = player_camera.Instance.transform.TransformDirection(_motion);
+        else
+            _motion = transform.TransformDirection(_motion);
+        // scale
+        _motion *= _speedMove;
+        RotationVector = new Vector3(0, _rotationCenter + input_controller.Instance.CameraH, 0);
+        // - gravity [globul]
+        if (!_isClimb && !game_variables.Instance.FreeCamera && !player_controller.CharacterController.isGrounded)
+            MoveVector -= Vector3.up * (_isSwim ? _gravitySwim : _gravity);
+        // - active [local]
+        if (!_isClimb && !game_variables.Instance.FreeCamera)
+            foreach (Vector3 force in _activeForces)
+                _motion += force;
+        _activeForces.Clear();
+        // prep global
+        // // - friction
+        // // if (state_current != MotorState.MOVE && (player_controller.CharacterController.isGrounded || _isClimb))
+        // if (player_controller.CharacterController.isGrounded || _isClimb)
+        //     MoveVector *= _friction;
+        // // - drag
+        // MoveVector *= _drag;
+        // - terminal
+        if (MoveVector.magnitude > (_isSwim ? _terminalVelocitySwim : _terminalVelocity))
+            // MoveVector = MoveVector.normalized * _terminalVelocity;
+            // anti gravity
+            MoveVector -= MoveVector.normalized * (_isSwim ? _gravitySwim : _gravity);
+        // apply [world space]
+        player_controller.CharacterController.Move((MoveVector + _motion) * Time.deltaTime);
+        transform.rotation = Quaternion.Euler(RotationVector);
+        
+        // invisible ?
+        if (game_variables.Instance.FreeCamera)
+            return;
+        // all visible entites ?
+        Collider[] hitColliders = Physics.OverlapSphere(Position, game_variables.Instance.CameraFar);
+        for (int i = 0; i < hitColliders.Length; i++)
+            if (hitColliders[i].gameObject.layer == game_variables.Instance.LayerEntity)
+                // hitColliders[i].transform.GetComponent<base_entity>().Register_AudioPoint(transform.position, MoveVector.magnitude * test_loudness);
+                hitColliders[i].transform.GetComponent<base_entity>().Register_AudioPoint(transform.position, _motion.magnitude * test_loudness);
+    }
+
+    // private void GetCurrentStateMotion()
+    // {
+    //     // ??? unit square to circle
+    //     Vector2 temp = Vector2.zero;
+    //     switch (state_current)
+    //     {
+    //         case MotorState.NULL:
+    //             // Get move vector (vetro?) from input controller
+    //             if (_isClimb || game_variables.Instance.FreeCamera)
+    //                 MoveVector = Vector3.zero;
+    //             // preserve gravity
+    //             else
+    //                 MoveVector = Vector3.up * MoveVector.y;
+    //             // Get CameraH from Input Controller 
+    //             // RotationVector = new Vector3(0, _rotationCenter + input_controller.Instance.CameraH * _speedRotate, 0);
+    //             RotationVector = new Vector3(0, _rotationCenter + input_controller.Instance.CameraH, 0);
+    //             break;
+    //         case MotorState.MOVE:
+    //             // Get MoveVector From Input Controller 
+    //             if (_isClimb)
+    //                 // temp = new Vector2(input_controller.Instance.MovementH, input_controller.Instance.MovementV * player_camera.Instance.VerticalOrientation);
+    //                 temp = new Vector2(0, input_controller.Instance.MovementV);
+    //             else
+    //                 temp = new Vector2(input_controller.Instance.MovementH, input_controller.Instance.MovementV);
+    //             // we goin fast
+    //             if (!game_variables.Instance.FreeCamera)
+    //                 // normalize ?
+    //                 temp = temp.magnitude > 1 ? temp.normalized : temp;
+    //             // no free cam, exhaustion nerf
+    //             if (!game_variables.Instance.FreeCamera && !base_player.Instance.CanSprint)
+    //                 // temp = temp.magnitude > game_variables.Instance.SprintRatio ? temp * ((temp.magnitude / game_variables.Instance.SprintRatio) - 1) : temp;
+    //                 temp = temp.magnitude > game_variables.Instance.SprintRatio ? temp.normalized * game_variables.Instance.SprintRatio : temp;
+    //             // Debug.Log(temp.magnitude);
+    //             // apply
+    //             // MoveVector = new Vector3(input_controller.Instance.MovementH, MoveVector.y, input_controller.Instance.MovementV);
+    //             // flying
+    //             if (game_variables.Instance.FreeCamera)
+    //                 MoveVector = new Vector3(temp.x, 0, temp.y);
+    //             // climbing
+    //             else if (_isClimb)
+    //                 // MoveVector = new Vector3(temp.x, temp.y, 0);
+    //                 MoveVector = new Vector3(0, temp.y, 0);
+    //             // preserve gravity [walk, swim]
+    //             else
+    //                 MoveVector = new Vector3(temp.x, MoveVector.y, temp.y);
+    //             // Get CameraH from Input Controller 
+    //             // RotationVector = new Vector3(0, _rotationCenter + input_controller.Instance.CameraH * _speedRotate, 0);
+    //             RotationVector = new Vector3(0, _rotationCenter + input_controller.Instance.CameraH, 0);
+    //             break;
+    //         // case MotorState.SUBMERGED:
+    //         //     // swim ?
+    //         //     break;
+    //         // case MotorState.CLING:
+    //         //     // Get MoveVector From Input Controller 
+    //         //     temp = new Vector2(input_controller.Instance.MovementH, input_controller.Instance.MovementV * player_camera.Instance.VerticalOrientation);
+    //         //     // normalize
+    //         //     temp = temp.magnitude > 1 ? temp.normalized : temp;
+    //         //     // apply
+    //         //     // MoveVector = new Vector3(input_controller.Instance.MovementH, input_controller.Instance.MovementV * player_camera.Instance.VerticalOrientation, 0);
+    //         //     MoveVector = new Vector3(temp.x, temp.y, 0);
+    //         //     // Get CameraH from Input Controller 
+    //         //     //RotationVector = new Vector3(0, _rotationCenter + input_controller.Instance.CameraH * _speedRotate, 0);
+    //         //     break;
+    //     }
+    // }
+
+    // private void ProcessCurrentState()
+    // {
+    //     // testLog.Instance.AddMessage(state_current + "\t" + _isClimb + "\t" + _isSwim);
+    //     // Debug.Log(state_current + "\t" + _isClimb + "\t" + _isSwim);
+    //     switch (state_current)
+    //     {
+    //         case MotorState.NULL:
+    //             if (!game_variables.Instance.FreeCamera && !_isClimb)
+    //                 // // Apply Gravity
+    //                 // ApplyGravity();
+    //                 ApplyForces();
+
+    //             // Move the Character in World Space While Multiplying MoveVector by DeltaTime 
+    //             player_controller.CharacterController.Move(MoveVector * Time.deltaTime);
+
+    //             // Rotate Character in World Space 
+    //             transform.rotation = Quaternion.Euler(RotationVector);
+    //             break;
+    //         case MotorState.MOVE:
+    //             // camera relative motion ?
+    //             // if (game_variables.Instance.FreeCamera)
+    //             if (game_variables.Instance.FreeCamera || _isSwim)
+    //                 MoveVector = player_camera.Instance.transform.TransformDirection(MoveVector);
+    //             // Transform MoveVector to World Space relative to character (Normalized Lateral Motion)
+    //             else
+    //                 MoveVector = transform.TransformDirection(MoveVector);
+
+    //             // climb or free cam [no gravity]
+    //             if (_isClimb || game_variables.Instance.FreeCamera)
+    //                 // Multiply MoveVector by SpeedMove
+    //                 MoveVector *= _speedMove;
+    //             else
+    //             {
+    //                 // Multiply MoveVector by SpeedMove
+    //                 MoveVector = new Vector3(MoveVector.x * _speedMove, MoveVector.y, MoveVector.z * _speedMove);
+    //                 // // Apply Gravity
+    //                 // ApplyGravity();
+    //                 ApplyForces();
+    //             }
+    //             // Move the Character in World Space While Multiplying MoveVector by DeltaTime
+    //             player_controller.CharacterController.Move(MoveVector * Time.deltaTime);
+
+    //             // Rotate Character in World Space 
+    //             transform.rotation = Quaternion.Euler(RotationVector);
+
+    //             // * testing walk noise alert [no free cam and test]
+    //             // if (!game_variables.Instance.FreeCamera && testShowAudio)
+    //             // {
+    //             //     test_audioSphere test = Instantiate(testAudioSphere, Position, Quaternion.identity).GetComponent<test_audioSphere>();
+    //             //     // test.transform.localScale = Vector3.one * MoveVector.magnitude * test_loudness;
+    //             //     test.Initialize(MoveVector.magnitude * test_loudness);
+    //             // }
+    //             // invisible ?
+    //             if (game_variables.Instance.FreeCamera)
+    //                 return;
+    //             // echo, delay ?
+    //             // Collider[] hitColliders = Physics.OverlapSphere(Position, MoveVector.magnitude * test_loudness);
+    //             // all visible entites ?
+    //             Collider[] hitColliders = Physics.OverlapSphere(Position, game_variables.Instance.CameraFar);
+    //             // Collider[] hitColliders = Physics.OverlapSphere(Position, test_loudness);
+    //             for (int i = 0; i < hitColliders.Length; i++)
+    //                 if (hitColliders[i].gameObject.layer == game_variables.Instance.LayerEntity)
+    //                     // hitColliders[i].transform.GetComponent<base_entity>().Register_AudioPoint(transform.position, Time.time);
+    //                     // hitColliders[i].transform.GetComponent<entity_keeper>().Register_AudioPoint(transform.position);
+    //                     hitColliders[i].transform.GetComponent<base_entity>().Register_AudioPoint(transform.position, MoveVector.magnitude * test_loudness);
+    //                     // Debug.Log(hitColliders[i].gameObject.name);
+    //             break;
+    //     }
+    // }
+
+    // void ApplyForces()
+    // {
+    //     // // * testing [world space]
+    //     // _activeForces.Add(Vector3.forward * 20f);
+        
+    //     // drag
+    //     // friction
+    //     // gravity
+    //     ApplyGravity();
+
+    //     // external forces
+    //     foreach (Vector3 force in _activeForces)
+    //         MoveVector += force * Time.deltaTime;
+
+    //     _activeForces.Clear();
+    // }
+
+    // // Estimates and Applies Gravitational Force 
+    // void ApplyGravity()
+    // {
+    //     if (MoveVector.y > -_terminalVelocity)
+    //         MoveVector = new Vector3(MoveVector.x, MoveVector.y - _gravity * Time.deltaTime, MoveVector.z);
+
+    //     if (player_controller.CharacterController.isGrounded && MoveVector.y < -1)
+    //         MoveVector = new Vector3(MoveVector.x, -1, MoveVector.z);
+    // }
+
+    // water flow ?
+    public void RegisterForce(Vector3 force)
+    {
+        _activeForces.Add(force);
+    }
+
+    //private float SpeedMove()
+    //{
+    //    if (IsSprinting)
+    //        return _speedSprint;
+    //    return _speedMove;
+    //}
+
+    //public void SetState(MotorState state, int rngID)
+    public void SetState(MotorState state)
+    {
+        //if (state_current == state && rngID == _idStateCurrent)
+        if (state_current == state)
+            return;                                                 //ignore if already in Target State [and same RNG ID ?] 
+
+        //_idStateCurrent = rngID;                                    //record RNG ID or Current Motor STATE 
+        state_current = state;
+
+        _hasCycled = false;                                         //reset state cycle flag 
+    }
+
+    // ??? 
+    public void ResetAll()
+    {
+        state_current = MotorState.NULL;
+        _rotationCenter = 0;
+        _flagRecordRotation = -1;
+        //_idStateCurrent = int.MaxValue;
+    }
+
+    // ??? 
+    // Called by game state on state apply 
+    // Called by game master on game start, continue, reset
+    public void SetData(float[] position, float[] rotation, float rotationCenter)
+    {
+        _characterController.enabled = false;
+        transform.position = new Vector3(position[0], position[1], position[2]);
+        _characterController.enabled = true;
+        transform.eulerAngles = new Vector3(rotation[0], rotation[1], rotation[2]);
+        _rotationCenter = rotationCenter;
+    }
+
+    // ???
+    public void SnapToLadder(Vector3 position)
+    {
+        // ???
+        // begin climb
+        _isClimb = true;
+        // clear motion ?
+        MoveVector = Vector3.zero;
+        // ???
+        _characterController.enabled = false;
+        transform.position = position;
+        _characterController.enabled = true;
+    }
+
+    // // Called by base player on applying fall damage 
+    // public void ClearCache_AbsoluteVerticalVelocity()
+    // {
+    //     //float vel = _cachedAbsoluteVerticalVelocity;
+    //     _cachedAbsoluteVerticalVelocity = 0;
+    //     //return vel;
+    // }
+
+    public void ToggleColliders(bool value)
+    {
+        // return unto sender
+        if (value)
+        {
+            // enable collision detection ?
+            if (_collider != null)
+                _collider.enabled = true;
+            gameObject.layer = game_variables.Instance.LayerClimbPlayer;
+            base_player.Instance.gameObject.layer = game_variables.Instance.LayerPlayer;
+        }
+        // free cam
+        else
+        {
+            // disable collision detection ?
+            if (_collider != null)
+                _collider.enabled = false;
+            gameObject.layer = game_variables.Instance.LayerIgnore;
+            base_player.Instance.gameObject.layer = game_variables.Instance.LayerIgnore;
+            // release climb ?
+            _isClimb = false;
+        }
+    }
+
+    #region Collision Handling
+
+    void OnCollisionEnter(Collision other)
+    {
+        // bump entity
+        if (other.gameObject.layer == game_variables.Instance.LayerEntity)
+        {
+            // check facing direction ? fov ?
+            other.gameObject.GetComponent<base_entity>().Register_CollisionPoint(transform.position);
+        }
+        // Debug.Log(other.gameObject.layer);
+        // Debug.Log("While\t" + _isClimb + "\tCollision Enter:\t" + other.gameObject.name);
+        // Debug.Log(other.contacts[0].normal.y);
+        // below collision
+        if (Mathf.Round(other.contacts[0].normal.y) > 0)
+        {
+            // Debug.Log("hi\t" + _cachedAbsoluteVerticalVelocity + "\t" + other.gameObject.layer);
+            // Debug.Log(other.relativeVelocity.magnitude);
+            // Debug.Log(_rigidbody.velocity);
+            // // ignore not ground or water
+            // if (other.gameObject.layer != game_variables.Instance.LayerEnvironment && other.gameObject.layer != game_variables.Instance.LayerWater)
+            //     return;
+            // free fall
+            if (!_isClimb)
+            {
+                // water
+                if (other.gameObject.layer == game_variables.Instance.LayerWater)
+                // {
+                    // // slow down ?
+                    // // _cachedAbsoluteVerticalVelocity *= _waterSpeedReduction;
+                    // MoveVector += Vector3.up * MoveVector.y * _waterSpeedReduction;
+                    // _isWater = true;
+                    _isSwim = true;
+                    // _isClimb = false;
+                // }
+                // ground, falling fast
+                // else if (other.relativeVelocity.magnitude > _damagingVelocity)
+                // else if (_rigidbody.velocity.magnitude > _damagingVelocity)
+                // else if (_rigidbody.velocity.y < -_damagingVelocity)
+                if (_cachedAbsoluteVerticalVelocity > _damagingVelocity)
+                // else if (other.gameObject.layer == game_variables.Instance.LayerEnvironment && _cachedAbsoluteVerticalVelocity > _damagingVelocity)
+                // if (!_isClimb)
+                // else if (_cachedAbsoluteVerticalVelocity > _damagingVelocity)
+                {
+                    // Debug.Log("henlo");
+                    // big oof
+                    // base_player.Instance.DrainHealth(10f * other.relativeVelocity.magnitude);
+                    // base_player.Instance.DrainHealth(10f * _rigidbody.velocity.magnitude / _terminalVelocity);
+                    // base_player.Instance.DrainHealth(10f * -_rigidbody.velocity.y / _terminalVelocity);
+                    base_player.Instance.DrainHealth(10f * _cachedAbsoluteVerticalVelocity);
+                    // ???
+                    // _cachedAbsoluteVerticalVelocity = 0;
+                    // halt vertical motion ?
+                    MoveVector -= Vector3.up * MoveVector.y;
+                }
+            }
+            // end climb
+            _isClimb = false;
+        }
+        // sides collision [probably]
+        else if (Mathf.Round(other.contacts[0].normal.y) == 0)
+        {
+            // ignore not climb surface
+            if (other.gameObject.layer != game_variables.Instance.LayerClimbSurface)
+                return;
+            // facing climb surface ?
+            if (Vector3.Angle(other.contacts[0].normal, transform.forward) > 90f)
+            {
+                // begin climb
+                _isClimb = true;
+                // clear motion ?
+                MoveVector = Vector3.zero;
+            }
+        }
+    }
+
+    void OnCollisionExit(Collision other)
+    {
+        // // Debug.Log("While\t" + _isClimb + "\tCollision Exit:\t" + other.gameObject.name);
+        // // ignore not climb surface
+        // if (other.gameObject.layer != game_variables.Instance.LayerClimbSurface)
+        //     return;
+        // // ??? end climb
+        // _isClimb = false;
+        // // ??? end swim
+        // _isSwim = false;
+        if (other.gameObject.layer == game_variables.Instance.LayerClimbSurface)
+            // ??? end climb
+            _isClimb = false;
+        else if (other.gameObject.layer == game_variables.Instance.LayerWater)
+            // ??? end swim
+            _isSwim = false;
+    }
+
+    #endregion
+
+    #region Properties
+
+    public bool IsMoving
+    {
+        get { return state_current == MotorState.MOVE; }
+    }
+
+    // public bool isCling
+    // {
+    //     get { return state_current == MotorState.CLING; }
+    // }
+
+    public bool IsClimb
+    {
+        get { return _isClimb; }
+    }
+
+    //public bool IsSprinting
+    //{
+    //    get { return input_controller.Instance.IsSprint && base_player.Instance.CanSprint; }
+    //}
+    //public bool IsSprinting
+    //{
+    //    get { return SprintAmount > 0; }
+    //}
+
+    //public float MoveRate
+    //{
+    //    get { return }
+    //}
+
+    // ??? [Range(0, 1)]
+    // 0 when idle, 1 when moving
+    // public float SprintAmount
+    // {
+    //     get { return Mathf.Clamp01((Mathf.Abs((new Vector2(MoveVector.x, MoveVector.z) / _speedMove).magnitude) - game_variables.Instance.SprintRatio) / (1 - game_variables.Instance.SprintRatio)); }
+    // }
+
+    // 0 - idle, 1 - full speed
+    // public float MoveRate
+    // {
+    //     get { return _cachedAbsoluteHorizontalVelocity; }
+    // }
+
+    // public float RotationCenter
+    // {
+    //     get { return _rotationCenter; }
+    // }
+
+    public Vector3 Position
+    {
+        get { return player_controller.CharacterController.transform.position; }
+    }
+
+    public Quaternion Rotation
+    {
+        get { return transform.rotation; }
+    }
+
+    public Vector3 Forward
+    {
+        get { return transform.forward; }
+    }
+
+    public Vector3 Right
+    {
+        get { return transform.right; }
+    }
+
+    // ??? 
+    public float VerticalRotation
+    {
+        get { return RotationVector.y; }
+    }
+
+    // ??? 
+    public Vector3 RotationEuler
+    {
+        get { return transform.eulerAngles; }
+    }
+
+    // public float SpeedRotate
+    // {
+    //     get { return _speedRotate; }
+    // }
+
+    // public float Cached_AbsoluteVerticalVelocity
+    // {
+    //     get { return _cachedAbsoluteVerticalVelocity; }
+    // }
+
+    // True when has been processed at least once in current state 
+    public bool HasCycled
+    {
+        get { return _hasCycled; }
+    }
+
+    // public float Cached_AbsoluteHorizontalVelocity
+    // {
+    //     get { return _cachedAbsoluteHorizontalVelocity; }
+    // }
+
+    public bool IsHorizontalDisplacement
+    {
+        get { return _isHorizontalDisplacement; }
+    }
+
+    #endregion
+}

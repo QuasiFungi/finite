@@ -1,0 +1,33 @@
+using UnityEngine;
+
+// cover, bookmark ?
+public class itemModel_bookSet : base_item
+{
+    // private Animator _anim;
+    // public bool _isOpen;
+    public float _page;       // jump to
+    // ???
+    public bool _isCover;    // when closed else always
+    public itemModel_book _book;
+
+    public override void Initialize()
+    {
+        base.Initialize();
+        // 
+        // _anim = GetComponent<Animator>();
+        // _anim.SetBool("IsOpen", _isOpen);
+    }
+    public override void Trigger_Model()
+    {
+        // _isOpen = !_isOpen;
+        // _anim.SetBool("IsOpen", _isOpen);
+        // _anim.SetInt("Page", _page);
+        // ???
+        if (_isCover && _book.IsOpen)
+            // close
+            _book.PageSet(-1f);
+        else
+            // jump to page
+            _book.PageSet(_page);
+    }
+}

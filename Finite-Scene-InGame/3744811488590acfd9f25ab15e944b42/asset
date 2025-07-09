@@ -1,0 +1,62 @@
+using UnityEngine;
+
+public class itemView_combinationLock : base_item
+{
+    private Animator _anim;
+    public itemDialogue_toggleUnary panel;
+    private bool[] _pad;
+    private bool[] _check;
+    public override void Initialize()
+    {
+        // 
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        // 
+        _pad = new bool [10];
+        _pad[0] = false;
+        _pad[1] = false;
+        _pad[2] = false;
+        _pad[3] = false;
+        _pad[4] = false;
+        _pad[5] = false;
+        _pad[6] = false;
+        _pad[7] = false;
+        _pad[8] = false;
+        _pad[9] = false;
+        _check = new bool [10];
+        _check[0] = false;
+        _check[1] = true;
+        _check[2] = false;
+        _check[3] = true;
+        _check[4] = false;
+        _check[5] = true;
+        _check[6] = false;
+        _check[7] = true;
+        _check[8] = false;
+        _check[9] = true;
+    }
+    public override string DebugMessage()
+    {
+        return _pad[0] + " " + _pad[1] + " " + _pad[2] + " " + _pad[3] + " " + _pad[4] + " " + _pad[5] + " " + _pad[6] + " " + _pad[7] + " " + _pad[8] + " " + _pad[9];
+    }
+    public void Tick(int id)
+    {
+        // - animate
+        // blend tree ?
+        // _anim.SetTrigger("Tick");
+
+        // - tick
+        _pad[id] = true;
+        
+        // - tally
+        bool clear = true;
+        for (int i = _check.Length - 1; i > -1; i--)
+            // mismatch
+            if (_check[i] != _pad[i])
+                clear = false;
+        if (clear)
+            // one way ?
+            panel.On();
+            // Debug.Log("yay");
+    }
+}

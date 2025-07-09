@@ -1,0 +1,85 @@
+using UnityEngine;
+
+public class itemInteractive_candle : base_item
+{
+    private Animator _anim;
+    public float _timer;
+    public bool _isOn;
+    public override void Initialize()
+    {
+        base.Initialize();
+        _anim = GetComponent<Animator>();
+        // 
+    }
+    public override void Trigger_Passive()
+    {
+        // L I T
+        if (_isOn && _timer > 0)
+        {
+            // consume
+            _timer -= Time.deltaTime;
+            // _anim.SetFloat ???
+            // point light ? local area texture swap, colored/light/ambient/shadow projector ?
+            // reflection probe but simpler ? only baked point light ?
+            if (_timer <= 0)
+                _isOn = false;
+        }
+    }
+    public override void Trigger_Interaction()
+    {
+        // lit
+        if (_isOn)
+            // sizzle~
+            _isOn = false;
+        // extinguished
+        else
+        {
+            // fuel left
+            if (_timer > 0)
+            {
+                // try item...
+                if (base_player.Instance.ItemEquipped != null)
+                {
+                    // flint/lantern/master key check...
+                    if (base_player.Instance.ItemEquipped.Slug == "flintIgniter" || base_player.Instance.ItemEquipped.Slug == "lantern" || base_player.Instance.ItemEquipped.Slug == "key_master")
+                        // spark
+                        _isOn = true;
+                    else
+                    {
+                        // trigger dialogue menu 
+                        manager_ui.Instance.Trigger_DisplayMessage();
+                        display_message.Instance.SetMessage("This thing doesn't seem to work here");
+                    }
+                }
+                // ...nope
+                else
+                {
+                    // trigger dialogue menu 
+                    manager_ui.Instance.Trigger_DisplayMessage();
+                    display_message.Instance.SetMessage("The candle hasn't fully melted yet/can still be used/L I T");
+                }
+            }
+            // nein
+            else
+            {
+                // try item
+                if (base_player.Instance.ItemEquipped != null)
+                {
+                    // flint/lantern/master key check...
+                    if (base_player.Instance.ItemEquipped.Slug == "flintIgniter" || base_player.Instance.ItemEquipped.Slug == "lantern" || base_player.Instance.ItemEquipped.Slug == "key_master")
+                    {
+                        // trigger dialogue menu 
+                        manager_ui.Instance.Trigger_DisplayMessage();
+                        display_message.Instance.SetMessage("The wick is too small to light");
+                    }
+                }
+                else
+                {
+                    // trigger dialogue menu 
+                    manager_ui.Instance.Trigger_DisplayMessage();
+                    display_message.Instance.SetMessage("The candle is melted to the base/completely");
+                }
+            }
+        }
+    }
+}

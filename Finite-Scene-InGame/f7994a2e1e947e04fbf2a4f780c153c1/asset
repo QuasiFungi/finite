@@ -1,0 +1,459 @@
+﻿using System.Collections;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using System;
+
+public class game_master : MonoBehaviour
+{
+    public static game_master Instance;
+    public game_state _gameState;
+    public enum GameState
+    {
+        NULL, 
+        MAIN_MENU, 
+        INGAME,  
+    }
+    public GameState state_current;
+
+    private float _gameTime;                //...end state
+    private float _gameTimer;               //...end state timer
+    private float _gameTimerOffset;         //...game time offset based on save file 
+    private float _dayCycleTime;            //...quarter of a day
+    private float _dayCycleTimer;           //...
+
+    private Color _colorWorldCurrent;       //...
+    private Color _colorWorldFrom;          //...
+    private Color _colorWorldTo;            //...
+
+    public Color _colorMidnight;            //...
+    public Color _colorSunrise;             //...
+    public Color _colorMidday;              //...
+    public Color _colorSunset;              //...
+    public Color _colorLimbo;              //...
+
+    public Light _worldLight;               //...??? 
+    private float _intensityLightFrom;      //...
+    private float _intensityLightTo;        //...
+
+    // private Transform _spawnPoint;
+
+    private int _gameLives;                 //...
+
+    private int _loadStatus;                //...0-unloaded,1-preparing,2-ready
+
+    public bool noFog;
+
+    // private int _existSave;                 //...0-nay,1-ye
+    // private float _autosaveTimer;
+    // public enum WorldState
+    // {
+    //     SUNRISE,
+    //     MIDDAY,
+    //     SUNSET,
+    //     MIDNIGHT,
+    //     LIMBO
+    // }
+    // private int _worldState;
+    
+    void Awake()
+    {
+        // Destroy any copies ? [when loading scenes] 
+        if (Instance != null)
+            Destroy(gameObject);
+
+        Instance = this;
+        DontDestroyOnLoad(this);
+        
+        // ??? 
+        // _spawnPoint = (new GameObject()).transform;
+        // _spawnPoint.parent = transform;
+        
+        // game_save.StateLoad();
+        // ??? 
+        _loadStatus = 0;
+
+        // ** TESTING ** 
+        // _existSave = PlayerPrefs.GetInt("_existSave");
+        //_existSave = 1;
+        // _existSave = system_game.ExistSave() ? 1 : 0;
+    }
+
+    void Start()
+    {
+        // if (system_game.ExistSave())
+        // {
+        //     //// Load partial State from Preferences [Load Game] 
+        //     // _gameLives = PlayerPrefs.GetInt("_gameLives");
+        //     // _gameTimer = PlayerPrefs.GetFloat("_gameTimer");
+        //     // _gameTimerOffset = PlayerPrefs.GetFloat("_gameTimerOffset");
+        //     ////_colorWorldCurrent = _colorMidnight;
+        //     ////_colorWorldFrom = _colorWorldCurrent;
+        //     ////_colorWorldTo = _colorSunrise;
+        //     //_autosaveTimer = game_variables.Instance.DurationAutosave_Sec;
+        //     //// Load Settings from Preferences 
+        //     //// Load Player Data from File 
+        //     //// Load Enemy Data from File 
+        //     //// Load Item Data from File 
+        // }
+        // else
+        // {
+        // Initialize variables [New Game] 
+        _gameLives = 3;
+        // _gameTime = 450;    // 7.5 minutes
+        // _gameTime = 60;    // 1 minute
+        // _gameTime = 1800;    // 30 minutes
+        // _gameTime = 2250;    // 37.5 minutes
+        // _gameTime = 300;    // 5 minutes [midnight>sunrise>midday>sunset>midnight>limbo]
+        _gameTime = 50;    // 5 minutes [midnight>sunrise>midday>sunset>midnight>limbo]
+        // RenderSettings.fogEndDistance = game_variables.Instance.DistanceFogFar;
+        // _gameTimer = _gameTime + 60f; // [sunset>midnight>sunrise>midday>sunset>midnight>limbo]
+        // _gameTimer = _gameTime + 30f; // [sunset>midnight>sunrise>midday>sunset>midnight>limbo]
+        _gameTimer = _gameTime + 5f; // [sunset>midnight>sunrise>midday>sunset>midnight>limbo]
+        _gameTimerOffset = 0;
+        // _dayCycleTime = 450;    // 7.5 minutes
+        _dayCycleTime = _gameTime / 5f; // 1 minute
+        // _dayCycleTimer = 60f;   // 1 minute
+        // _dayCycleTimer = 30; // 0.5 minute
+        // _dayCycleTimer = 10; // 0.5 minute
+        // _dayCycleTimer = _dayCycleTime;
+        _dayCycleTimer = 5f;
+        _colorWorldCurrent = _colorSunset;
+        _colorWorldFrom = _colorWorldCurrent;
+        _colorWorldTo = _colorMidnight;
+        _intensityLightFrom = 0.05f;
+        _intensityLightTo = 0.6f;
+        //_autosaveTimer = game_variables.Instance.DurationAutosave_Sec;
+        // Apply Fog Effect 
+        if (noFog)
+            return;
+        RenderSettings.fog = true;
+        RenderSettings.fogStartDistance = 0;
+        // ?
+        RenderSettings.fogEndDistance = 40;
+
+        // _worldState = 0;
+        //// Save partial State to Preferences 
+        //PlayerPrefs.SetInt("_gameLives", _gameLives);
+        //PlayerPrefs.SetFloat("_gameTimer", _gameTimer);
+        //PlayerPrefs.SetFloat("_gameTimerOffset", _gameTimerOffset);
+        //PlayerPrefs.Save();
+        // }
+    }
+
+    void Update()
+    {
+        // Process INGAME State 
+        if (state_current == GameState.INGAME)
+        {
+            if (_loadStatus == 0)
+            {
+                _loadStatus++;
+                // load scene INGAME if NOT already 
+                if (SceneManager.GetActiveScene().name != "Finite_Ingame")
+                    StartCoroutine(LoadSceneAsync("Finite_Ingame"));
+                else
+                    _loadStatus++;
+            }
+            else if (_loadStatus == 2)
+            {
+                _loadStatus++;
+                
+                //ResetAll();
+                
+                // // ??? 
+                base_player.Instance.ResetAll();
+                manager_ui.Instance.SetState(manager_ui.UIState.INGAME);
+
+                // if (_existSave == 0)
+                // if (system_game.ExistSave())
+                //     system_game.StateSave();    // new game
+                // else
+                //     if(!system_game.StateLoad())    // load game
+                        // * CRITICAL ERROR *
+                        return;
+            }
+            // while alive or dead [spawned]
+            if (LoadStatus)
+            {
+                testLog.Instance.AddMessage("gameTimer:\t" + _gameTimer);
+                // spawn light
+                if (_worldLight == null)
+                {
+                    GameObject light = new GameObject("_worldLight");
+                    _worldLight = light.AddComponent<Light>();
+                    _worldLight.type = LightType.Directional;
+                    _worldLight.shadows = LightShadows.None;
+                    light.transform.eulerAngles = new Vector3(50, -30, 0);
+                }
+                // tick timers
+                if (_gameTimer > 0)
+                    _gameTimer -= Time.deltaTime;
+                if (_dayCycleTimer > 0)
+                    _dayCycleTimer -= Time.deltaTime;
+                // Update Fog and Camera Color based on World Time
+                _colorWorldCurrent = Color.Lerp(_colorWorldTo, _colorWorldFrom, _dayCycleTimer / _dayCycleTime);
+                if (!noFog)
+                {
+                    RenderSettings.fogColor = _colorWorldCurrent;
+                    RenderSettings.fogEndDistance = game_variables.Instance.CameraFar;
+                }
+                player_camera.Instance.cam_Main.backgroundColor = _colorWorldCurrent;
+                _worldLight.intensity = Mathf.Lerp(_intensityLightTo + game_variables.Instance.Brightness, _intensityLightFrom + game_variables.Instance.Brightness, _dayCycleTimer / _dayCycleTime);
+                _worldLight.color = _colorWorldCurrent;
+                // rotate over time ?
+                // _worldLight.Rotate();
+                // _worldLight.RotateAround();
+                // reset timer
+                if (_dayCycleTimer <= 0)
+                {
+                    // nth day cycle
+                    if (_gameTimer > _dayCycleTime)
+                    {
+                        _dayCycleTimer = _dayCycleTime;
+                        if (_colorWorldCurrent.Equals(_colorMidnight))
+                        {
+                            // Debug.Log("to sunrise");
+                            _colorWorldFrom = _colorWorldCurrent;
+                            _colorWorldTo = _colorSunrise;
+                            // brightness ?
+                            _intensityLightFrom = 0.05f;
+                            _intensityLightTo = 0.6f;
+                        }
+                        else if (_colorWorldCurrent.Equals(_colorSunrise))
+                        {
+                            // Debug.Log("to midday");
+                            _colorWorldFrom = _colorWorldCurrent;
+                            _colorWorldTo = _colorMidday;
+                            _intensityLightFrom = 0.6f;
+                            _intensityLightTo = 1f;
+                        }
+                        else if (_colorWorldCurrent.Equals(_colorMidday))
+                        {
+                            // Debug.Log("to sunset");
+                            _colorWorldFrom = _colorWorldCurrent;
+                            _colorWorldTo = _colorSunset;
+                            _intensityLightFrom = 1f;
+                            _intensityLightTo = 0.5f;
+                        }
+                        else if (_colorWorldCurrent.Equals(_colorSunset))
+                        {
+                            // Debug.Log("to midnight");
+                            _colorWorldFrom = _colorWorldCurrent;
+                            _colorWorldTo = _colorMidnight;
+                            _intensityLightFrom = 0.5f;
+                            _intensityLightTo = 0.05f;
+                        }
+                    }
+                    // last day cycle [always night?]
+                    else if (_colorWorldCurrent.Equals(_colorMidnight))
+                    {
+                        // Debug.Log("to limbo");
+                        _dayCycleTimer = _dayCycleTime;
+                        _colorWorldFrom = _colorWorldCurrent;
+                        _colorWorldTo = _colorLimbo;
+                        _intensityLightFrom = 0.05f;
+                        _intensityLightTo = 0.2f;
+                    }
+                }
+            }
+        }
+    }
+
+    // ??? [lag] 
+    IEnumerator LoadSceneAsync(string sceneName)
+    {
+        AsyncOperation async = SceneManager.LoadSceneAsync(sceneName);
+        while (!async.isDone)
+        {
+            yield return null;
+        }
+        if (async.isDone)
+            _loadStatus++;
+    }
+
+    // ??? 
+    private void ResetAll()
+    {
+        base_player.Instance.ResetAll();
+        player_camera.Instance.ResetAll();
+        player_controller.Instance.ResetAll();
+        player_motor.Instance.ResetAll();
+        manager_ui.Instance.SetState(manager_ui.UIState.INGAME);
+    }
+
+    // // ??? 
+    // private void Game_Save()
+    // {
+    //     // Save Settings to Preferences 
+    //     PlayerPrefs.SetFloat("_durationAutosave", game_variables.Instance.DurationAutosave);
+    //     PlayerPrefs.SetFloat("_durationDisplayMessage", game_variables.Instance.DurationDisplayMessage);
+    //     PlayerPrefs.SetFloat("_fov", game_variables.Instance.FOV);
+    //     PlayerPrefs.SetFloat("_sensitivityMovement", game_variables.Instance.SensitivityMovement);
+    //     PlayerPrefs.SetFloat("_sensitivityFreeCam", game_variables.Instance.SensitivityFreeCam);
+    //     PlayerPrefs.SetInt("_movementH", game_variables.Instance.MovementH_Int);
+    //     PlayerPrefs.SetInt("_movementV", game_variables.Instance.MovementV_Int);
+    //     PlayerPrefs.SetInt("_cameraH", game_variables.Instance.CameraH_Int);
+    //     PlayerPrefs.SetInt("_cameraV", game_variables.Instance.CameraV_Int);
+    //     PlayerPrefs.SetInt("_chirality", game_variables.Instance.Chirality_Int);
+    //     PlayerPrefs.SetInt("_displayBattery", game_variables.Instance.DisplayBattery);
+    //     PlayerPrefs.SetInt("_vibration", game_variables.Instance.Vibration);
+    //     PlayerPrefs.SetInt("_audioAssist", game_variables.Instance.AudioAssist_Int);
+    //     PlayerPrefs.SetInt("_colorblindAssist", game_variables.Instance.ColorblindAssist);
+    //     PlayerPrefs.SetFloat("_environmentSounds", game_variables.Instance.EnvironmentSounds);
+    //     PlayerPrefs.SetFloat("_enemySounds", game_variables.Instance.EnemySounds);
+    //     PlayerPrefs.SetInt("_language", game_variables.Instance.Language);
+    //     // Update Game State 
+    //     game_state.State_Update();
+    //     // Save Updated Game State to File 
+    //     //BinaryFormatter binaryFormatter = new BinaryFormatter();
+    //     //using (FileStream fileStream = File.Open(_saveFilePath, FileMode.OpenOrCreate))
+    //     //{
+    //     //    binaryFormatter.Serialize(fileStream, game_state);
+    //     //}
+    //     //_existSave = 1;     //set flag 
+    //     //PlayerPrefs.SetInt("_existSave", _existSave);
+    //     PlayerPrefs.Save();
+    // }
+
+    // // ??? 
+    // private void Game_Load()
+    // {
+    //     // Load Settings from Preferences 
+    //     //_existSave = PlayerPrefs.GetInt("_existSave");
+    //     game_variables.Instance.SetAutosave(PlayerPrefs.GetFloat("_durationAutosave"));
+    //     game_variables.Instance.SetDisplayMessage(PlayerPrefs.GetFloat("_durationDisplayMessage"));
+    //     game_variables.Instance.SetFOV(PlayerPrefs.GetFloat("_fov"));
+    //     game_variables.Instance.SetSensitivityMovement(PlayerPrefs.GetFloat("_sensitivityMovement"));
+    //     game_variables.Instance.SetSensitivityFreeCam(PlayerPrefs.GetFloat("_sensitivityFreeCam"));
+    //     game_variables.Instance.SetMovementH(PlayerPrefs.GetInt("_movementH"));
+    //     game_variables.Instance.SetMovementV(PlayerPrefs.GetInt("_movementV"));
+    //     game_variables.Instance.SetCameraH(PlayerPrefs.GetInt("_cameraH"));
+    //     game_variables.Instance.SetCameraV(PlayerPrefs.GetInt("_cameraV"));
+    //     game_variables.Instance.SetChirality(PlayerPrefs.GetInt("_chirality"));
+    //     game_variables.Instance.SetDisplayMessage(PlayerPrefs.GetInt("_displayBattery"));
+    //     game_variables.Instance.SetVibration(PlayerPrefs.GetInt("_vibration"));
+    //     game_variables.Instance.SetAudioAssist(PlayerPrefs.GetInt("_audioAssist") == 1);
+    //     game_variables.Instance.SetColorblindAssist(PlayerPrefs.GetInt("_colorblindAssist"));
+    //     game_variables.Instance.SetEnvironmentSounds(PlayerPrefs.GetFloat("_environmentSounds"));
+    //     game_variables.Instance.SetEnemySounds(PlayerPrefs.GetFloat("_enemySounds"));
+    //     game_variables.Instance.SetLanguage(PlayerPrefs.GetInt("_language"));
+    //     // Load Game State from File 
+    //     //BinaryFormatter binaryFormatter = new BinaryFormatter();
+    //     //using (FileStream fileStream = File.Open(_saveFilePath, FileMode.Open))
+    //     //{
+    //     //    game_state = (game_state)binaryFormatter.Deserialize(fileStream);
+    //     //}
+    //     // Apply Loaded Game State 
+    //     game_state.State_Apply();
+    // }
+
+    #region Misc Functions
+
+    // ??? 
+    public void SetState(GameState state)
+    {
+        state_current = state;
+    }
+
+    // Called by Main Menu button ? 
+    public void Trigger_Ingame()
+    {
+        SetState(GameState.INGAME);
+    }
+
+    // Called by base player on death 
+    public void Deduct_GameLife()
+    {
+        _gameLives--;
+    }
+
+    // ??? 
+    public void Reset_GameLives()
+    {
+        _gameLives = 3;
+    }
+
+    // called by game state on state load 
+    public void SetColorWorldCurrent(Color color)
+    {
+        _colorWorldCurrent = color;
+    }
+
+    // called by game state on state load 
+    public void SetColorWorldFrom(Color color)
+    {
+        _colorWorldFrom = color;
+    }
+
+    // called by game state on state load 
+    public void SetColorWorldTo(Color color)
+    {
+        _colorWorldTo = color;
+    }
+
+    #endregion
+
+    #region Properties
+
+    // ??? 
+    //public Vector3 SpawnPointPosition
+    //{
+    //    get { return _spawnPoint.position; }
+    //}
+
+    // ??? 
+    //public Quaternion SpawnPointRotation
+    //{
+    //    get { return _spawnPoint.rotation; }
+    //}
+
+    public float GameTimer
+    {
+        get { return _gameTimer; }
+    }
+
+    // ??? 
+    public int GameLives
+    {
+        get { return _gameLives; }
+    }
+
+    public bool HasGameLives
+    {
+        get { return _gameLives > 0; }
+    }
+
+    // for use by tutorial to allow fade out 
+    public bool LoadStatus
+    {
+        get { return _loadStatus > 1; }
+    }
+
+    // ???
+    // returns true if save file created or exists 
+    public bool HasSaveFile
+    {
+        // get { return _existSave == 1; }
+        get { return false; }
+    }
+
+    // used by game state on state update 
+    public Color ColorWorldCurrent_Vector
+    {
+        get { return new Vector4(_colorWorldCurrent.r, _colorWorldCurrent.g, _colorWorldCurrent.b, _colorWorldCurrent.a); }
+    }
+
+    // used by game state on state update 
+    public Color ColorWorldFrom_Vector
+    {
+        get { return new Vector4(_colorWorldFrom.r, _colorWorldFrom.g, _colorWorldFrom.b, _colorWorldFrom.a); }
+    }
+
+    // used by game state on state update 
+    public Color ColorWorldTo_Vector
+    {
+        get { return new Vector4(_colorWorldTo.r, _colorWorldTo.g, _colorWorldTo.b, _colorWorldTo.a); }
+    }
+
+    #endregion
+}

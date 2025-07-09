@@ -1,0 +1,93 @@
+using UnityEngine;
+using Panda;
+
+public class entity_hound : entity_ai
+{
+    public float deviationForward;
+
+    [Task]
+    public void EntityAtAnchor(float distance)
+    {
+        if (_anchor == null)
+            // 
+            Task.current.Fail();
+        else if (Vector3.Distance(transform.position, _anchor.position) < distance)
+            // 
+            Task.current.Succeed();
+        else
+            // 
+            Task.current.Fail();
+    }
+
+    [Task]
+    public void SetMoveToOmniTick(float degrees, float rate)
+    {
+        Vector3 direction = _target.position - transform.position;
+        // _positionMove = _target.position;
+        // reduce distance ? stay or move further away on lag bug fix ?
+        _move.position = _target.position - direction * Mathf.Clamp01(1 - Time.deltaTime * rate);
+        // from to [-ve left|counter clockwise, +ve right|clockwise]
+        // ??? angle of incidence sign ?
+        // Mathf.Sign(Vector3.SignedAngle(transform.forward, direction, Vector3.up));
+        _move.RotateAround(_target.position, Vector3.up, degrees * Mathf.Sign(Vector3.SignedAngle(transform.forward, direction, Vector3.up)));
+        // obstruction check ?
+        direction = _move.position - transform.position;
+        RaycastHit hitInfo;
+        if (Physics.Raycast(transform.position, direction, out hitInfo, direction.magnitude))
+            // obstructed ? reflect ? stuck glitch ?
+            _move.position = hitInfo.point + hitInfo.normal * direction.magnitude;
+        // always
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void SetMoveToAnchorTick(float degrees)
+    {
+        Vector3 direction = _anchor.position - transform.position;
+        // _positionMove = _target.position;
+        // orbit at fixed distance ?
+        _move.position = _anchor.position - direction;
+        // from to [-ve left|counter clockwise, +ve right|clockwise]
+        // ??? angle of incidence sign ?
+        _move.RotateAround(_anchor.position, Vector3.up, degrees * Mathf.Sign(Vector3.SignedAngle(transform.forward, direction, Vector3.up)));
+        // always
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void SetMoveToOmniForward(float distance)
+    {
+        if (_target == null)
+        {
+            Task.current.Fail();
+            return;
+        }
+        // fixed point on radial locus [random ?]
+        Vector3 direction = Quaternion.Euler(0, deviationForward, 0) * _target.forward;
+        RaycastHit hitInfo;
+        if (Physics.Raycast(_target.position, direction, out hitInfo, distance))
+            // obstructed ?
+            _move.position = hitInfo.point;
+        else
+            // clear ?
+            _move.position = _target.position + direction * distance;
+        // always
+        Task.current.Succeed();
+    }
+
+    [Task]
+    public void SetMoveToAnchorForward(float distance)
+    {
+        // fixed point on radial locus [random ?]
+        Vector3 direction = Quaternion.Euler(0, deviationForward, 0) * _anchor.forward;
+        RaycastHit hitInfo;
+        if (Physics.Raycast(_anchor.position, direction, out hitInfo, distance))
+            // obstructed ?
+            _move.position = hitInfo.point;
+        else
+            // clear ?
+            _move.position = _anchor.position + direction * distance;
+        // always
+        Task.current.Succeed();
+    }
+}

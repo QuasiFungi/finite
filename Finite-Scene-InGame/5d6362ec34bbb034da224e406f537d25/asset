@@ -1,0 +1,40 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class DontDestroyOnLoad : MonoBehaviour
+{
+    //public static DontDestroyOnLoad Instance;
+    public float fade_time;
+    public float fade_timer;
+
+    void Awake()
+    {
+        fade_time = 2;
+        fade_timer = 0;
+
+        DontDestroyOnLoad(this);
+    }
+
+    void Update()
+    {
+        // self destruct timer 
+        if (fade_timer > 0)
+        {
+            fade_timer -= Time.deltaTime;
+            if (fade_timer <= 0)
+                Destroy(gameObject);
+        }
+    }
+
+    public void Try_Load()
+    {
+        //Debug.Log("" + SceneManager.GetActiveScene().name);
+        if (SceneManager.GetActiveScene().name == "dummy_main")
+        {
+            fade_timer = fade_time;
+            SceneManager.LoadScene("dummy_ingame");
+        }
+    }
+}
